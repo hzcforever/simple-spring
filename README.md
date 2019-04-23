@@ -3,10 +3,10 @@ A simple IOC container refer to Spring.
 
 ## quick-start
 
-* [version 1.0](#version 10)
-    * [简单的 IOC](#简单的 IOC)
-    * [简单的 AOP](#简单的 AOP)
-* [version 2.0](#version 20)
+* [version 1.0](#version-10)
+    * [简单的 IOC](#简单的-IOC)
+    * [简单的 AOP](#简单的-AOP)
+* [version 2.0](#version-20)
 
 ## version 1.0
 
