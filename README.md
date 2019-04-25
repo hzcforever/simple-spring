@@ -3,7 +3,7 @@ A simple IOC container refer to Spring.
 
 ## quick-start
 
-* [Spring 相关特性介绍](#Spring-相关特性介绍)
+* [Spring 部分配置特性](#Spring-部分配置特性)
 	* [id 和 name](#id-和-name)
 	* [配置是否允许 Bean 覆盖和循环依赖](#配置是否允许-Bean-覆盖和循环依赖)
 	* [profile](#profile)
@@ -19,7 +19,7 @@ A simple IOC container refer to Spring.
     * [简单的 AOP](#简单的-AOP)
 * [version 2.0](#version-20)
 
-## Spring 部分特性介绍
+## Spring 部分配置特性
 
 ### id 和 name
 
