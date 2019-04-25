@@ -3,10 +3,400 @@ A simple IOC container refer to Spring.
 
 ## quick-start
 
+* [Spring 相关特性介绍](#Spring-相关特性介绍)
+	* [id 和 name](#id-和-name)
+	* [配置是否允许 Bean 覆盖、是否允许循环依赖](#配置是否允许-Bean-覆盖、是否允许循环依赖)
+	* [profile](#profile)
+	* [工厂模式生成 Bean](#工厂模式生成-Bean)
+	* [FactoryBean](#FactoryBean)
+	* [初始化 Bean 的回调](#初始化-Bean-的回调)
+	* [销毁 Bean 的回调](#销毁-Bean-的回调)
+	* [Bean 的继承](#Bean-的继承)
+	* [方法注入](#方法注入)
+	* [BeanPostProcessor](#BeanPostProcessor)
 * [version 1.0](#version-10)
     * [简单的 IOC](#简单的-IOC)
     * [简单的 AOP](#简单的-AOP)
 * [version 2.0](#version-20)
+
+## Spring 部分特性介绍
+
+### id 和 name
+
+每个 Bean 在 Spring 容器中都有一个唯一的名字（beanName）和 0 个或多个别名（aliases）。
+
+我们从 Spring 容器中获取 Bean 的时候，可以根据 beanName，也可以通过别名。
+
+    beanFactory.getBean("beanName or alias");
+
+在配置 <bean /> 的过程中，我们可以配置 id 和 name，看几个例子就知道是怎么回事了。
+
+    <bean id="messageService" name="m1, m2, m3" class="com.javadoop.example.MessageServiceImpl">
+
+以上配置的结果就是：beanName 为 messageService，别名有 3 个，分别为 m1、m2、m3。
+
+    <bean name="m1, m2, m3" class="com.javadoop.example.MessageServiceImpl" />
+
+以上配置的结果就是：beanName 为 m1，别名有 2 个，分别为 m2、m3。
+
+    <bean class="com.javadoop.example.MessageServiceImpl">
+
+beanName 为：com.javadoop.example.MessageServiceImpl#0，
+
+别名 1 个，为： com.javadoop.example.MessageServiceImpl
+
+    <bean id="messageService" class="com.javadoop.example.MessageServiceImpl">
+
+以上配置的结果就是：beanName 为 messageService，没有别名。
+
+### 配置是否允许 Bean 覆盖、是否允许循环依赖
+
+我们说过，默认情况下，allowBeanDefinitionOverriding 属性为 null。如果在同一配置文件中 Bean id 或 name 重复了，会抛错，但是如果不是同一配置文件中，会发生覆盖。
+
+可是有些时候我们希望在系统启动的过程中就严格杜绝发生 Bean 覆盖，因为万一出现这种情况，会增加我们排查问题的成本。
+
+循环依赖说的是 A 依赖 B，而 B 又依赖 A。或者是 A 依赖 B，B 依赖 C，而 C 却依赖 A。默认 allowCircularReferences 也是 null。
+
+它们两个属性是一起出现的，必然可以在同一个地方一起进行配置。
+
+添加这两个属性的作者 Juergen Hoeller 在这个 jira 的讨论中说明了怎么配置这两个属性。
+
+    public class NoBeanOverridingContextLoader extends ContextLoader {
+    
+        @Override
+        protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext) {
+            super.customizeContext(servletContext, applicationContext);
+    	    AbstractRefreshableApplicationContext arac = (AbstractRefreshableApplicationContext) applicationContext;
+    	    arac.setAllowBeanDefinitionOverriding(false);
+        }
+    }
+
+    public class MyContextLoaderListener extends org.springframework.web.context.ContextLoaderListener {
+    
+        @Override
+        protected ContextLoader createContextLoader() {
+            return new NoBeanOverridingContextLoader();
+        }
+    
+    }
+
+    <listener>
+        <listener-class>com.javadoop.MyContextLoaderListener</listener-class>  
+    </listener>
+
+如果以上方式不能满足你的需求，请参考这个链接：[解决spring中不同配置文件中存在name或者id相同的bean可能引起的问题](https://blog.csdn.net/zgmzyr/article/details/39380477)
+
+### profile
+
+我们可以把不同环境的配置分别配置到单独的文件中，举个例子：
+
+    <beans profile="development"
+    	xmlns="http://www.springframework.org/schema/beans"
+    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+    	xsi:schemaLocation="...">
+    
+    	<jdbc:embedded-database id="dataSource">
+    		<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+    		<jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
+    	</jdbc:embedded-database>
+    </beans>
+
+    <beans profile="production"
+    	xmlns="http://www.springframework.org/schema/beans"
+    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    	xmlns:jee="http://www.springframework.org/schema/jee"
+    	xsi:schemaLocation="...">
+    
+    	<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+    </beans>
+
+应该不必做过多解释了吧，看每个文件第一行的 profile=""。
+
+当然，我们也可以在一个配置文件中使用：
+
+    <beans xmlns="http://www.springframework.org/schema/beans"
+    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+    	xmlns:jee="http://www.springframework.org/schema/jee"
+    	xsi:schemaLocation="...">
+    
+    	<beans profile="development">
+    		<jdbc:embedded-database id="dataSource">
+    		<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+    		<jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
+    	</jdbc:embedded-database>
+    </beans>
+    
+    <beans profile="production">
+    	<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+    	</beans>
+    </beans>
+
+理解起来也很简单吧。
+
+接下来的问题是，怎么使用特定的 profile 呢？Spring 在启动的过程中，会去寻找 “spring.profiles.active” 的属性值，根据这个属性值来的。那怎么配置这个值呢？
+
+Spring 会在这几个地方寻找 spring.profiles.active 的属性值：操作系统环境变量、JVM 系统变量、web.xml 中定义的参数、JNDI。
+
+最简单的方式莫过于在程序启动的时候指定：`-Dspring.profiles.active="profile1,profile2"`
+
+profile 可以激活多个
+
+当然，我们也可以通过代码的形式从 Environment 中设置 profile：
+
+    AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+    ctx.getEnvironment().setActiveProfiles("development");
+    ctx.register(SomeConfig.class, StandaloneDataConfig.class, JndiDataConfig.class);
+    ctx.refresh(); // 重启
+
+如果是 Spring Boot 的话更简单，我们一般会创建 application.properties、application-dev.properties、application-prod.properties 等文件，其中 application.properties 配置各个环境通用的配置，application-{profile}.properties 中配置特定环境的配置，然后在启动的时候指定 profile：
+
+    java -Dspring.profiles.active=prod -jar JavaDoop.jar
+
+如果是单元测试中使用的话，在测试类中使用 @ActiveProfiles 指定，这里就不展开了。
+
+### 工厂模式生成 Bean
+
+请读者注意 factory-bean 和 FactoryBean 的区别。这节说的是前者，是说静态工厂或实例工厂，而后者是 Spring 中的特殊接口，代表一类特殊的 Bean，附录的下面一节会介绍 FactoryBean。
+
+设计模式里，工厂方法模式分静态工厂和实例工厂，我们分别看看 Spring 中怎么配置这两个，来个代码示例就什么都清楚了。
+
+静态工厂：
+
+    <bean id="clientService"
+    	class="examples.ClientService"
+    	factory-method="createInstance"/>
+
+    public class ClientService {
+    	private static ClientService clientService = new ClientService();
+    	private ClientService() {}
+    
+    	// 静态方法
+    	public static ClientService createInstance() {
+    		return clientService;
+    	}
+    }
+
+实例工厂：
+
+    <bean id="serviceLocator" class="examples.DefaultServiceLocator">
+    	<!-- inject any dependencies required by this locator bean -->
+    </bean>
+    
+    <bean id="clientService"
+    	factory-bean="serviceLocator"
+    	factory-method="createClientServiceInstance"/>
+    
+    <bean id="accountService"
+    	factory-bean="serviceLocator"
+    	factory-method="createAccountServiceInstance"/>
+    
+    public class DefaultServiceLocator {
+    
+   		private static ClientService clientService = new ClientServiceImpl();
+    
+    	private static AccountService accountService = new AccountServiceImpl();
+    
+    	public ClientService createClientServiceInstance() {
+    		return clientService;
+    	}
+    
+    	public AccountService createAccountServiceInstance() {
+    		return accountService;
+    	}
+    }
+    
+### FactoryBean
+
+FactoryBean 适用于 Bean 的创建过程比较复杂的场景，比如数据库连接池的创建。
+
+    public interface FactoryBean<T> {
+    	T getObject() throws Exception;
+    	Class<T> getObjectType();
+    	boolean isSingleton();
+    }
+
+    public class Person { 
+    	private Car car ;
+    	private void setCar(Car car){ this.car = car;  }  
+    }
+
+我们假设现在需要创建一个 Person 的 Bean，首先我们需要一个 Car 的实例，我们这里假设 Car 的实例创建很麻烦，那么我们可以把创建 Car 的复杂过程包装起来：
+
+    public class MyCarFactoryBean implements FactoryBean<Car>{
+    	private String make; 
+    	private int year ;
+    
+    	public void setMake(String m){ this.make =m ; }
+    
+    	public void setYear(int y){ this.year = y; }
+    
+    	public Car getObject(){ 
+      	// 这里我们假设 Car 的实例化过程非常复杂，反正就不是几行代码可以写完的那种
+      		CarBuilder cb = CarBuilder.car();
+    
+      		if(year!=0) cb.setYear(this.year);
+      		if(StringUtils.hasText(this.make)) cb.setMake( this.make ); 
+      		return cb.factory(); 
+    }
+    
+    	public Class<Car> getObjectType() { return Car.class ; } 
+    
+    	public boolean isSingleton() { return false; }
+    }
+
+我们看看装配的时候是怎么配置的：
+
+    <bean class = "com.javadoop.MyCarFactoryBean" id = "car">
+    	<property name = "make" value ="Honda"/>
+        <property name = "year" value ="1984"/>
+    </bean>
+
+    <bean class = "com.javadoop.Person" id = "josh">
+        <property name = "car" ref = "car"/>
+    </bean>
+看到不一样了吗？id 为 “car” 的 bean 其实指定的是一个 FactoryBean，不过配置的时候，我们直接让配置 Person 的 Bean 直接依赖于这个 FactoryBean 就可以了。中间的过程 Spring 已经封装好了。
+
+说到这里，我们再来点干货。我们知道，现在还用 xml 配置 Bean 依赖的越来越少了，更多时候，我们可能会采用 java config 的方式来配置，这里有什么不一样呢？
+
+    @Configuration 
+    public class CarConfiguration { 
+    
+    	@Bean 
+    	public MyCarFactoryBean carFactoryBean(){ 
+        	MyCarFactoryBean cfb = new MyCarFactoryBean();
+        	cfb.setMake("Honda");
+        	cfb.setYear(1984);
+        	return cfb;
+    	}
+    
+    	@Bean
+    	public Person aPerson(){ 
+    		Person person = new Person();
+      		// 注意这里的不同
+    		person.setCar(carFactoryBean().getObject());
+    		return person; 
+    	} 
+    }
+
+这个时候，其实我们的思路也很简单，把 MyCarFactoryBean 看成是一个简单的 Bean 就可以了，不必理会什么 FactoryBean，它是不是 FactoryBean 和我们没关系。
+
+### 初始化 Bean 的回调
+
+有以下四种方案：
+
+    <bean id="exampleInitBean" class="examples.ExampleBean" init-method="init"/>
+
+    public class AnotherExampleBean implements InitializingBean {
+    
+    	public void afterPropertiesSet() {
+    	// do some initialization work
+    	}
+    }
+
+    @Bean(initMethod = "init")
+    public Foo foo() {
+    	return new Foo();
+    }
+
+    @PostConstruct
+    public void init() {
+    
+    }
+
+### 销毁 Bean 的回调
+
+    <bean id="exampleInitBean" class="examples.ExampleBean" destroy-method="cleanup"/>
+
+    public class AnotherExampleBean implements DisposableBean {
+    
+    	public void destroy() {
+    	// do some destruction work (like releasing pooled connections)
+    	}
+    }
+
+    @Bean(destroyMethod = "cleanup")
+    public Bar bar() {
+    	return new Bar();
+    }
+
+    @PreDestroy
+    public void cleanup() {
+    
+    }
+
+### Bean 的继承
+
+在初始化 Bean 的地方，我们说过了这个：
+
+    RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+
+这里涉及到的就是`<bean parent="" />`中的 parent 属性，我们来看看 Spring 中是用这个来干什么的。
+
+首先，我们要明白，这里的继承和 java 语法中的继承没有任何关系，不过思路是相通的。child bean 会继承 parent bean 的所有配置，也可以覆盖一些配置，当然也可以新增额外的配置。
+
+Spring 中提供了继承自 AbstractBeanDefinition 的 ChildBeanDefinition 来表示 child bean。
+
+看如下一个例子:
+
+    <bean id="inheritedTestBean" abstract="true" class="org.springframework.beans.TestBean">
+    	<property name="name" value="parent"/>
+    	<property name="age" value="1"/>
+    </bean>
+    
+    <bean id="inheritsWithDifferentClass" class="org.springframework.beans.DerivedTestBean"
+    parent="inheritedTestBean" init-method="initialize">
+    	<property name="name" value="override"/>
+    </bean>
+
+parent bean 设置了 abstract="true" 所以它不会被实例化，child bean 继承了 parent bean 的两个属性，但是对 name 属性进行了覆写。
+
+child bean 会继承 scope、构造器参数值、属性值、init-method、destroy-method 等等。
+
+当然，我不是说 parent bean 中的 abstract = true 在这里是必须的，只是说如果加上了以后 Spring 在实例化 singleton beans 的时候会忽略这个 bean。
+
+比如下面这个极端 parent bean，它没有指定 class，所以毫无疑问，这个 bean 的作用就是用来充当模板用的 parent bean，此处就必须加上 abstract = true。
+
+    <bean id="inheritedTestBeanWithoutClass" abstract="true">
+    	<property name="name" value="parent"/>
+    	<property name="age" value="1"/>
+    </bean>
+
+### 方法注入
+
+一般来说，我们的应用中大多数的 Bean 都是 singleton 的。singleton 依赖 singleton，或者 prototype 依赖 prototype 都很好解决，直接设置属性依赖就可以了。
+
+但是，如果是 singleton 依赖 prototype 呢？这个时候不能用属性依赖，因为如果用属性依赖的话，我们每次其实拿到的还是第一次初始化时候的 bean。
+
+一种解决方案就是不要用属性依赖，每次获取依赖的 bean 的时候从 BeanFactory 中取。这个也是大家最常用的方式了吧。怎么取，我就不介绍了，大部分 Spring 项目大家都会定义那么个工具类的。
+
+另一种解决方案就是使用 Lookup method。
+
+### BeanPostProcessor
+
+应该说 BeanPostProcessor 概念在 Spring 中也是比较重要的。我们看下接口定义：
+
+    public interface BeanPostProcessor {
+    
+    	Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
+    
+       	Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
+    }
+
+看这个接口中的两个方法名字我们大体上可以猜测 bean 在初始化之前会执行 postProcessBeforeInitialization 这个方法，初始化完成之后会执行 postProcessAfterInitialization 这个方法。但是，这么理解是非常片面的。
+
+首先，我们要明白，除了我们自己定义的 BeanPostProcessor 实现外，Spring 容器在启动时自动给我们也加了几个。如在获取 BeanFactory 的 obtainFactory() 方法结束后的 prepareBeanFactory(factory)，大家仔细看会发现，Spring 往容器中添加了这两个 BeanPostProcessor：ApplicationContextAwareProcessor、ApplicationListenerDetector。
+
+我们回到这个接口本身，读者请看第一个方法，这个方法接受的第一个参数是 bean 实例，第二个参数是 bean 的名字，重点在返回值将会作为新的 bean 实例，所以，没事的话这里不能随便返回个 null。
+
+那意味着什么呢？我们很容易想到的就是，我们这里可以对一些我们想要修饰的 bean 实例做一些事情。但是对于 Spring 框架来说，它会决定是不是要在这个方法中返回 bean 实例的代理，这样就有更大的想象空间了。
+
+最后，我们说说如果我们自己定义一个 bean 实现 BeanPostProcessor 的话，它的执行时机是什么时候？
+
+如果仔细看了代码分析的话，其实很容易知道了，在 bean 实例化完成、属性注入完成之后，会执行回调方法，具体请参见类 AbstractAutowireCapableBeanFactory#initBean 方法。
+
+首先会回调几个实现了 Aware 接口的 bean，然后就开始回调 BeanPostProcessor 的 postProcessBeforeInitialization 方法，之后是回调 init-method，然后再回调 BeanPostProcessor 的 postProcessAfterInitialization 方法。
 
 ## version 1.0
 
