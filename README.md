@@ -5,7 +5,7 @@ A simple IOC container refer to Spring.
 
 * [Spring 相关特性介绍](#Spring-相关特性介绍)
 	* [id 和 name](#id-和-name)
-	* [配置是否允许 Bean 覆盖、是否允许循环依赖](#配置是否允许-Bean-覆盖、是否允许循环依赖)
+	* [配置是否允许 Bean 覆盖和循环依赖](#配置是否允许-Bean-覆盖和循环依赖)
 	* [profile](#profile)
 	* [工厂模式生成 Bean](#工厂模式生成-Bean)
 	* [FactoryBean](#FactoryBean)
@@ -49,7 +49,7 @@ beanName 为：com.javadoop.example.MessageServiceImpl#0，
 
 以上配置的结果就是：beanName 为 messageService，没有别名。
 
-### 配置是否允许 Bean 覆盖、是否允许循环依赖
+### 配置是否允许 Bean 覆盖和循环依赖
 
 我们说过，默认情况下，allowBeanDefinitionOverriding 属性为 null。如果在同一配置文件中 Bean id 或 name 重复了，会抛错，但是如果不是同一配置文件中，会发生覆盖。
 
