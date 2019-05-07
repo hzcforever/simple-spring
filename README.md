@@ -201,88 +201,60 @@ profile 可以激活多个
     
 ### FactoryBean
 
-FactoryBean 适用于 Bean 的创建过程比较复杂的场景，比如数据库连接池的创建。
+FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的是：它是实现了 FactoryBean<T> 接口的 Bean，当在 IOC 容器中的 Bean 实现了 FactoryBean 接口后，通过 getBean(String BeanName) 方法从 BeanFactory 中获取到的 Bean 对象并不是 FactoryBean 的实现类对象，实际上是通过 FactoryBean 的 getObject() 返回的对象。如果要获取 FactoryBean 对象，需要在 beanName 前面加一个 & 符号来获取。
 
-    public interface FactoryBean<T> {
-    	T getObject() throws Exception;
-    	Class<T> getObjectType();
-    	boolean isSingleton();
-    }
-
-    public class Person { 
-    	private Car car ;
-    	private void setCar(Car car){ 
-			this.car = car;  
-		}  
-    }
-
-我们假设现在需要创建一个 Person 的 Bean，首先我们需要一个 Car 的实例，我们这里假设 Car 的实例创建很麻烦，那么我们可以把创建 Car 的复杂过程包装起来：
-
-    public class MyCarFactoryBean implements FactoryBean<Car>{
-    	private String make; 
-    	private int year ;
-    
-    	public void setMake(String m){ this.make =m ; }
-    
-    	public void setYear(int y){ this.year = y; }
-    
-    	public Car getObject(){ 
-      	// 这里我们假设 Car 的实例化过程非常复杂，反正就不是几行代码可以写完的那种
-      		CarBuilder cb = CarBuilder.car();
-    
-      		if(year!=0) cb.setYear(this.year);
-      		if(StringUtils.hasText(this.make)) {
-				cb.setMake( this.make );
-			} 
-      		return cb.factory(); 
-    }
-    
-    	public Class<Car> getObjectType() { 
-			return Car.class;
-		} 
-    
-    	public boolean isSingleton() { 
-			return false; 
-		}
-    }
-
-我们看看装配的时候是怎么配置的：
-
-    <bean class = "com.test.MyCarFactoryBean" id = "car">
-    	<property name = "make" value ="Honda"/>
-        <property name = "year" value ="1984"/>
+    <bean id="school" class="com.test.School">
+        <property name="schoolName" value="hit"/>
+        <property name="address" value="harbin"/>
+    </bean>
+    <bean id="factoryBean" class="com.test.FactoryBeanTest">
+        <property name="type" value="school"/>
     </bean>
 
-    <bean class = "com.test.Person" id = "josh">
-        <property name = "car" ref = "car"/>
-    </bean>
+下面通过一个类实现 FactoryBean 接口，在配置文件中将该类的 type 属性设置为 student，会在 getObject() 方法中返回 Student 对象。
 
-看到不一样了吗？id 为 “car” 的 bean 其实指定的是一个 FactoryBean，不过配置的时候，我们直接让配置 Person 的 Bean 直接依赖于这个 FactoryBean 就可以了。中间的过程 Spring 已经封装好了。
+    public class FactoryBeanTest implements FactoryBean {
 
-说到这里，我们再来点干货。我们知道，现在还用 xml 配置 Bean 依赖的越来越少了，更多时候，我们可能会采用 java config 的方式来配置，这里有什么不一样呢？
+    	private String type;
 
-    @Configuration 
-    public class CarConfiguration { 
-    
-    	@Bean 
-    	public MyCarFactoryBean carFactoryBean() { 
-            MyCarFactoryBean cfb = new MyCarFactoryBean();
-            cfb.setMake("Honda");
-            cfb.setYear(1984);
-            return cfb;
+    	public String getType() {
+        	return type;
     	}
-    
-    	@Bean
-    	public Person aPerson(){ 
-    	    Person person = new Person();
-      	    // 注意这里的不同
-            person.setCar(carFactoryBean().getObject());
-    	    return person; 
+
+    	public void setType(String type) {
+        	this.type = type;
     	}
+
+    	public Object getObject() throws Exception {
+        	if ("student".equals(type)) {
+            	return new Student();
+        	} else {
+            	return new School();
+        	}
+    	}
+
+    	public Class<?> getObjectType() {
+        	return School.class;
+    	}
+
+    	public boolean isSingleton() {
+        	return true;
+    	}
+	}
+
+通过测试可以验证之前的想法。
  
-    }
+    School school = (School) applicationContext.getBean("factoryBean");
+	FactoryBeanTest factoryBean = (FactoryBeanTest) applicationContext.getBean("&factoryBean");
+    System.out.println(school.getClass().getName());
+    System.out.println(factoryBean.getClass().getName());
 
-这个时候，其实我们的思路也很简单，把 MyCarFactoryBean 看成是一个简单的 Bean 就可以了，不必理会什么 FactoryBean，它是不是 FactoryBean 和我们没关系。
+测试结果：
+
+	com.test.School 
+	com.test.FactoryBeanTest
+
+所以从 IOC 容器获取实现了 FactoryBean 的实现类时，返回的是实现类中的 getObject 方法返回的对象，要想获取 FactoryBean 的实现类，得在 getBean 中的 BeanName 前加上 & ,即 getBean(String &BeanName)。
 
 ### 初始化 Bean 的回调
 
