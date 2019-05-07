@@ -218,27 +218,27 @@ FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的
     	private String type;
 
     	public String getType() {
-        	return type;
+            return type;
     	}
 
     	public void setType(String type) {
-        	this.type = type;
+            this.type = type;
     	}
 
     	public Object getObject() throws Exception {
         	if ("student".equals(type)) {
-            	return new Student();
+                return new Student();
         	} else {
-            	return new School();
+                return new School();
         	}
     	}
 
     	public Class<?> getObjectType() {
-        	return School.class;
+            return School.class;
     	}
 
     	public boolean isSingleton() {
-        	return true;
+            return true;
     	}
 	}
 
