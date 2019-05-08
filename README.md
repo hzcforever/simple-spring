@@ -19,7 +19,7 @@ A simple IOC container refer to Spring.
     * [简单的 IOC](#简单的-IOC)
     * [简单的 AOP](#简单的-AOP)
 * [version 2.0](#version-20)
-	* [simple-spring 2.0 的功能](#simple-spring-2.0-的功能)
+	* [simple-spring 2.0 的功能](#simple-spring-20-的功能)
 	* [IOC 的实现](#IOC-的实现)
 	* [AOP 的实现](#AOP-的实现) 
 
