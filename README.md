@@ -255,11 +255,11 @@ FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的
 	com.test.School 
 	com.test.FactoryBeanTest
 
-所以从 IOC 容器获取实现了 FactoryBean 的实现类时，返回的是实现类中的 getObject 方法返回的对象，要想获取 FactoryBean 的实现类，得在 getBean 中的 BeanName 前加上 & ,即 getBean(String &BeanName)。
+所以从 IOC 容器获取实现了 FactoryBean 的实现类时，返回的是实现类中的 getObject 方法返回的对象，要想获取 FactoryBean 的实现类，得在 getBean 中的 BeanName 前加上 & ，即 getBean(String &BeanName)。
 
 ### BeanWrapper
 
-BeanWrapper 接口，作为 spring 内部的一个核心接口，正如其名，它是 bean 的包裹类,即在内部中将会保存该 bean 的实例，提供其它一些扩展功能。同时 BeanWrapper 接口还继承了 PropertyAccessor, propertyEditorRegistry, TypeConverter、ConfigurablePropertyAccesso r接口，所以它还提供了访问 bean 的属性值、属性编辑器注册、类型转换等功能。
+BeanWrapper 接口，作为 spring 内部的一个核心接口，正如其名，它是 bean 的包裹类，即在内部中将会保存该 bean 的实例，提供其它一些扩展功能。同时 BeanWrapper 接口还继承了 PropertyAccessor、propertyEditorRegistry、TypeConverter、ConfigurablePropertyAccessor 接口，所以它还提供了访问 bean 的属性值、属性编辑器注册和类型转换等功能。
 
     School school = new School();
     BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(school);
