@@ -14,6 +14,7 @@ A simple IOC container refer to Spring.
 	* [Bean 的继承](#Bean-的继承)
 	* [方法注入](#方法注入)
 	* [BeanPostProcessor](#BeanPostProcessor)
+	* [BeanWrapper](#BeanWrapper)
 * [version 1.0](#version-10)
     * [简单的 IOC](#简单的-IOC)
     * [简单的 AOP](#简单的-AOP)
@@ -214,33 +215,33 @@ FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的
 下面通过一个类实现 FactoryBean 接口，在配置文件中将该类的 type 属性设置为 student，会在 getObject() 方法中返回 Student 对象。
 
     public class FactoryBeanTest implements FactoryBean {
-
+    
     	private String type;
-
+    
     	public String getType() {
             return type;
     	}
-
+    
     	public void setType(String type) {
             this.type = type;
     	}
-
+    
     	public Object getObject() throws Exception {
-        	if ("student".equals(type)) {
+    	    if ("student".equals(type)) {
                 return new Student();
-        	} else {
+    	    } else {
                 return new School();
-        	}
+    	    }
     	}
-
+    
     	public Class<?> getObjectType() {
             return School.class;
     	}
-
+    
     	public boolean isSingleton() {
             return true;
     	}
-	}
+    }
 
 通过测试可以验证之前的想法。
  
@@ -255,6 +256,20 @@ FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的
 	com.test.FactoryBeanTest
 
 所以从 IOC 容器获取实现了 FactoryBean 的实现类时，返回的是实现类中的 getObject 方法返回的对象，要想获取 FactoryBean 的实现类，得在 getBean 中的 BeanName 前加上 & ,即 getBean(String &BeanName)。
+
+### BeanWrapper
+
+BeanWrapper 接口，作为 spring 内部的一个核心接口，正如其名，它是 bean 的包裹类,即在内部中将会保存该 bean 的实例，提供其它一些扩展功能。同时 BeanWrapper 接口还继承了 PropertyAccessor, propertyEditorRegistry, TypeConverter、ConfigurablePropertyAccesso r接口，所以它还提供了访问 bean 的属性值、属性编辑器注册、类型转换等功能。
+
+    School school = new School();
+    BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(school);
+    PropertyValue schoolName = new PropertyValue("schoolName", "HIT");
+    PropertyValue address = new PropertyValue("address", "Harbin");
+    beanWrapper.setPropertyValue(schoolName);
+    beanWrapper.setPropertyValue(address);
+    System.out.println(beanWrapper.getWrappedInstance());
+
+上面的代码已经很清楚地演示了如何使用 BeanWrapper 设置和获取 bean 的属性。 
 
 ### 初始化 Bean 的回调
 
