@@ -19,6 +19,9 @@ A simple IOC container refer to Spring.
     * [简单的 IOC](#简单的-IOC)
     * [简单的 AOP](#简单的-AOP)
 * [version 2.0](#version-20)
+	* [simple-spring 2.0 的功能](#simple-spring-2.0-的功能)
+	* [IOC 的实现](#IOC-的实现)
+	* [AOP 的实现](#AOP-的实现) 
 
 ## Spring 部分配置特性
 
@@ -437,4 +440,28 @@ AOP 是基于代理模式的，在介绍 AOP 的具体实现之前，先引入 S
 
 ## version 2.0
 
-**待续...**
+### simple-spring 2.0 的功能
+
+在 version 1.0 的版本中，我实现了最简单的 IOC 和 AOP 容器，功能很单一，而且 IOC 和 AOP 两个模块没有整合到一起。IOC 在加载 bean 的过程中，AOP 不能对 bean 织入相关的通知。在 2.0 的版本中，主要实现以下功能：
+
+1. 根据 xml 配置文件加载相关的 bean
+2. 对 BeanPostProcessor 类型的 bean 提供支持
+3. 对 BeanFactoryAware 类型的 bean 提供支持
+4. 实现基于 JDK 动态代理的 AOP
+5. 整合 IOC 和 AOP 两个模块，使得可以协同工作
+
+### IOC 的实现
+
+**BeanFactory 的流程**
+
+**BeanDefinition 的介绍**
+
+**xml 的解析**
+
+**BeanPostProcessor 的注册**
+
+**getBean 的解析流程**
+
+![bean的实例化流程](https://image-static.segmentfault.com/417/683/4176832362-599699ca2a68d)
+
+### AOP 的实现
