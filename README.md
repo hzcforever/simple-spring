@@ -436,13 +436,11 @@ AOP 是基于代理模式的，在介绍 AOP 的具体实现之前，先引入 S
 - HelloService 接口——目标对象接口
 - HelloServiceImpl——目标对象
 
-**不过以上代码只是实现了一个超级简单的 IOC 容器和 AOP 代理，且只能独立运行。在接下来的 version 2.0 打算实现一个较为复杂的 IOC 和 AOP。version 1.0 的详细代码见 [simple-spring-version1.0](https://github.com/hzcforever/simple-spring/tree/master/version1.0)**
-
 ## version 2.0
 
 ### simple-spring 2.0 的功能
 
-在 version 1.0 的版本中，我实现了最简单的 IOC 和 AOP 容器，功能很单一，而且 IOC 和 AOP 两个模块没有整合到一起。IOC 在加载 bean 的过程中，AOP 不能对 bean 织入相关的通知。在 2.0 的版本中，主要实现以下功能：
+在 version 1.0 的版本中，我实现了最简单的 IOC 和 AOP 容器，功能很单一，而且 IOC 和 AOP 两个模块没有整合到一起，只能独立运行。IOC 在加载 bean 的过程中，AOP 不能对 bean 织入相关的通知。在 2.0 的版本中，主要实现以下功能：
 
 1. 根据 xml 配置文件加载相关的 bean
 2. 对 BeanPostProcessor 类型的 bean 提供支持
