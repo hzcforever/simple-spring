@@ -22,6 +22,8 @@ A simple IOC container refer to Spring.
 	* [simple-spring 2.0 的功能](#simple-spring-20-的功能)
 	* [IOC 的实现](#IOC-的实现)
 	* [AOP 的实现](#AOP-的实现) 
+	* [IOC 与 AOP 的协作](#IOC-与-AOP-的协作)
+	* [总结](#总结)
 
 ## Spring 部分配置特性
 
@@ -452,14 +454,91 @@ AOP 是基于代理模式的，在介绍 AOP 的具体实现之前，先引入 S
 
 **BeanFactory 的流程**
 
+1. BeanFactory 加载 Bean 的配置文件，将读到的配置属性信息封装成 BeanDefinition 对象
+2. 将封装好的 BeanDefinition 对象注册到 BeanDefinition 容器中
+3. 注册 BeanPostProcessor 相关实现类到 BeanPostProcessor 容器中
+4. BeanFactory 进入就绪状态
+5. 外部调用 BeanFactory 的 getBean(String name) 方法，BeanFactory 着手实例化相应的 bean
+6. 重复步骤 3 和 4，直至 BeanFactory 被销毁
+
+上面就是 BeanFactory 的生命流程，即 IOC 容器的生命流程。
+
 **BeanDefinition 的介绍**
+
+在详细介绍 IOC 容器的工作原理前，这里先介绍实现 IOC 所用到的一些辅助类，包括 BeanDefinition、BeanReference、PropertyValues 和 PropertyValue。这些类与接下来 xml 配置文件的解析紧密相关。按照顺序，先从 BeanDefinition 开始介绍。
+
+BeanDefinition 从字面意思上翻译成中文就是“ Bean 的定义”。从翻译结果中就可以猜出这个类的用途，即根据 Bean 配置信息生成相应的 Bean 对象。举个例子，如果把 Bean 比作是电脑，那么 BeanDefinition 就是这台电脑的配置清单。我们从外观上无法看出这台电脑里面都有哪些配置，也看不出电脑的性能咋样。但是通过配置清单，我们就可了解这台电脑的详细配置。我们可以知道这台电脑是不是用了A厂的 CPU、B 厂的固态硬盘等。透过配置清单，我们也就可大致评估出这台电脑的性能。
+
+![根据 bean 的配置生成 BeanDefinition](https://image-static.segmentfault.com/362/424/3624241764-5a659908a7103)
+
+接下来我们来说说上图中的 ref 对应的 BeanReference 对象。BeanReference 对象保存的是 bean 配置中 ref 属性对应的值，在后续 BeanFactory 实例化 bean 时，会根据 BeanReference 保存的值去实例化 bean 所依赖的其他 bean。
+
+接下来说说 PropertyValues 和 PropertyValue 这两个长的比较像的类，首先是PropertyValue。PropertyValue 中有两个字段 name 和 value，用于记录 bean 配置中的 <property> 标签的属性值。然后是PropertyValues，PropertyValues 从字面意思上来看，是 PropertyValue 复数形式，在功能上等同于 List<PropertyValue>。那么为什么 Spring 不直接使用 List<PropertyValue>，而自己定义一个新类呢？答案是要获得一定的控制权，看下面的代码：
+
+    public class PropertyValues {
+    
+    	private final List<PropertyValue> propertyValueList = new ArrayList<PropertyValue>();
+    
+    	public void addPropertyValue(PropertyValue pv) {
+    	// 在这里可以对参数值 pv 做一些处理，如果直接使用 List，就不行了
+    		this.propertyValueList.add(pv);
+    	}
+    
+   		public List<PropertyValue> getPropertyValues() {
+    		return this.propertyValueList;
+    	}
+    }
 
 **xml 的解析**
 
+BeanFactory 初始化时，会根据传入的 xml 配置文件路径加载并解析配置文件。但是加载和解析 xml 配置文件这种脏活累活，BeanFactory 可不太愿意干，它只想管理容器中的 bean。于是 BeanFactory 将加载和解析配置文件的任务委托给专职人员 BeanDefinitionReader 的实现类 XmlBeanDefinitionReader 去做。那么 XmlBeanDefinitionReader 具体是怎么做的呢？XmlBeanDefinitionReader 做了如下几件事情：
+
+1. 将 xml 配置文件加载到内存中
+2. 获取根标签 <beans> 下所有的 <bean> 标签
+3. 遍历获取到的 <bean> 标签列表，并从标签中读取 id，class 属性
+4. 创建 BeanDefinition 对象，并将刚刚读取到的 id，class 属性值保存到对象中
+5. 遍历 <bean> 标签下的 <property> 标签，从中读取属性值，并保持在 BeanDefinition 对象中
+6. 将 <id, BeanDefinition> 键值对缓存在 Map 中，留作后用
+7. 重复3、4、5、6步，直至解析结束
+
+上面的解析步骤并不复杂，实现起来也不难，在之前 simple-spring 1.0 的版本中我就已经实现了。
+
 **BeanPostProcessor 的注册**
+
+BeanPostProcessor 接口是 Spring 对外拓展的接口之一，其主要用途提供一个机会，让开发人员能够插手 bean 的实例化过程。通过实现这个接口，我们就可在 bean 实例化时，对bean 进行一些处理。比如，我们所熟悉的 AOP 就是在这里将切面逻辑织入相关 bean 中的。正是因为有了 BeanPostProcessor 接口作为桥梁，才使得 AOP 可以和 IOC 容器产生联系。关于这一点，我将会在后续章节详细说明。
+
+接下来说说 BeanFactory 是怎么注册 BeanPostProcessor 相关实现类的。
+
+XmlBeanDefinitionReader 在完成解析工作后，BeanFactory 会将它解析得到的 <id, BeanDefinition> 键值对注册到自己的 beanDefinitionMap 中。BeanFactory 注册好 BeanDefinition 后，就立即开始注册 BeanPostProcessor 相关实现类。这个过程比较简单：
+
+1. 根据 BeanDefinition 记录的信息，寻找所有实现了 BeanPostProcessor 接口的类
+2. 实例化 BeanPostProcessor 接口的实现类
+3. 将实例化好的对象放入 List<BeanPostProcessor> 中
+4. 重复2、3步，直至所有的实现类完成注册
 
 **getBean 的解析流程**
 
+在完成了 xml 的解析、BeanDefinition 的注册以及 BeanPostProcessor 的注册过程后。BeanFactory 初始化的工作算是结束了，此时 BeanFactory 处于就绪状态，等待外部程序的调用。
+
+外部程序一般都是通过调用 BeanFactory 的 getBean(String name) 方法来获取容器中的 bean。BeanFactory 具有延迟实例化 bean 的特性，也就是等外部程序需要的时候，才实例化相关的 bean。这样做的好处是比较显而易见的，第一是提高了 BeanFactory 的初始化速度，第二是节省了内存资源。下面我们就来详细说说 bean 的实例化过程：
+
 ![bean的实例化流程](https://image-static.segmentfault.com/417/683/4176832362-599699ca2a68d)
 
+上图是一个完整的 Spring bean 实例化过程图。在我的仿写项目中，没有做的这么复杂，简化了 bean 实例化的过程，如下：
+
+1. 实例化 bean 对象，类似于 new XXObject()
+2. 将配置文件中对应的属性填充到刚创建的 bean 对象中
+3. 检查 Aware 相关接口，并设置相关依赖，simple-spring 目前仅对 BeanFactoryAware 接口实现类提供支持
+4. BeanPostProcessor 前置处理，即 postProcessBeforeInitialization(Object bean, String beanName)
+5. BeanPostProcessor 后置处理，即 postProcessAfterInitialization(Object bean, String beanName)
+6. 此时 bean 对象处于就绪状态，可以使用
+
 ### AOP 的实现
+
+**AOP 原理**
+
+**基于 JDK 动态代理的 AOP 实现**
+
+### IOC 与 AOP 的协作
+
+### 总结
