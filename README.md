@@ -15,7 +15,7 @@ A simple IOC container refer to Spring.
 	* [方法注入](#方法注入)
 	* [lookup-method](#lookup-method)
 	* [replaced-method](#replaced-method)
-	* [init-method](init-method)
+	* [init-method](#init-method)
 	* [BeanPostProcessor](#BeanPostProcessor)
 	* [BeanWrapper](#BeanWrapper)
 * [version 1.0](#version-10)
