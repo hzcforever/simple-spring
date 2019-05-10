@@ -15,6 +15,7 @@ A simple IOC container refer to Spring.
 	* [方法注入](#方法注入)
 	* [lookup-method](#lookup-method)
 	* [replaced-method](#replaced-method)
+	* [init-method](init-method)
 	* [BeanPostProcessor](#BeanPostProcessor)
 	* [BeanWrapper](#BeanWrapper)
 * [version 1.0](#version-10)
@@ -372,7 +373,7 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 
 1. 让 bean A 通过实现 ApplicationContextAware 接口来感知 applicationContext，从而能在运行时通过 applicationContext.getBean(String beanName) 的方法来获取最新的 bean B。但这时就与 Spring 代码耦合，违背了控制反转原则，即 bean 完全由 Spring 容器管理，我们只用使用 bean 就可以了
 
-2. 通过 <lookup-method /> 标签实现
+2. 通过 `<lookup-method />` 标签实现
 
 看以下一个场景，NewsProvider 是一个单例类，News 是非单例类，NewsProvider 每次提供最新的 news，现在分别通过以上两种方法来实现该需求。
 
@@ -406,7 +407,7 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
     	<property name="news" ref="news"/>
     </bean>
 
-**通过 <lookup-method /> 标签实现：**
+**通过 `<lookup-method />` 标签实现：**
 
     class LookupProvider {
     	private News news;
@@ -497,6 +498,22 @@ ReplacedAdmin 代码：
     	Admin admin = (Admin) applicationContext.getBean("admin");
     	admin.introduce(); // 结果为 “已经被替换”，成功地替换了原来 introduce() 的内容
     }
+
+### init-method
+
+Spring 实现 bean 的初始化方法有两种方式：
+
+1. 实现 InitializingBean 接口，并实现其中的 afterPropertiesSet() 方法，这种方式需要实现接口，从而使得 bean 的代码与 Spring 耦合在一起
+
+2. 通过 Spring 提供的 init-method 功能来执行一个 bean 的自定义初始化方法
+
+对于实现 InitializingBean 接口的这一种方法来说，在 xml 配置文件中不需要对 bean 进行特殊的设置，Spring 在配置文件中完成该 bean 的全部赋值后，会检查该 bean 是否实现了 InitializingBean 接口，如果实现了就直接调用 bean 的 afterPropertiesSet 方法
+
+对于第二种方式，bean 的类不需要实现任何接口，只需在 `<bean />` 中加入 init-method="xxx" 即可。其中 xxx 必须是一个无参方法，否则会抛出异常，该方法将会在 bean 初始化完成后被调用。
+
+InitializingBean 和 init-method 可以一起使用，Spring 会先处理 InitializingBean 再处理 init-method。init-method 是通过反射执行的，而 afterPropertiesSet 是直接执行的，所以 afterPropertiesSet 的执行效率比 init-method 高，不过 init-method 消除了 bean 对 Spring 依赖，推荐使用 init-method。
+
+如果一个 bean 被定义为非单例的，那么 afterPropertiesSet 和 init-method 在 bean 的每一个实例被创建时都会执行。单例 bean 的 afterPropertiesSet 和 init-method 只在 bean 第一次实例时执行。一般情况下 afterPropertiesSet 和 init-method 都应用在单例 bean 上。
 
 ### BeanPostProcessor
 
