@@ -12,7 +12,6 @@ A simple IOC container refer to Spring.
 	* [初始化 Bean 的回调](#初始化-Bean-的回调)
 	* [销毁 Bean 的回调](#销毁-Bean-的回调)
 	* [Bean 的继承](#Bean-的继承)
-	* [方法注入](#方法注入)
 	* [lookup-method](#lookup-method)
 	* [replaced-method](#replaced-method)
 	* [init-method](#init-method)
@@ -356,16 +355,6 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
     	<property name="name" value="parent"/>
     	<property name="age" value="1"/>
     </bean>
-
-### 方法注入
-
-一般来说，我们的应用中大多数的 Bean 都是 singleton 的。singleton 依赖 singleton，或者 prototype 依赖 prototype 都很好解决，直接设置属性依赖就可以了。
-
-但是，如果是 singleton 依赖 prototype 呢？这个时候不能用属性依赖，因为如果用属性依赖的话，我们每次其实拿到的还是第一次初始化时候的 bean。
-
-一种解决方案就是不要用属性依赖，每次获取依赖的 bean 的时候从 BeanFactory 中取。这个也是最常用的方式了吧。怎么取，我就不介绍了，大部分 Spring 项目大家都会定义那么个工具类的。
-
-另一种解决方案就是使用 Lookup method。
 
 ### lookup-method
 
