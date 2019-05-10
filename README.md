@@ -13,6 +13,8 @@ A simple IOC container refer to Spring.
 	* [销毁 Bean 的回调](#销毁-Bean-的回调)
 	* [Bean 的继承](#Bean-的继承)
 	* [方法注入](#方法注入)
+	* [lookup-method](#lookup-method)
+	* [replaced-method](#replaced-method)
 	* [BeanPostProcessor](#BeanPostProcessor)
 	* [BeanWrapper](#BeanWrapper)
 * [version 1.0](#version-10)
@@ -363,6 +365,138 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 一种解决方案就是不要用属性依赖，每次获取依赖的 bean 的时候从 BeanFactory 中取。这个也是最常用的方式了吧。怎么取，我就不介绍了，大部分 Spring 项目大家都会定义那么个工具类的。
 
 另一种解决方案就是使用 Lookup method。
+
+### lookup-method
+
+如果一个单例模式的 bean A 需要引用另一个非单例模式的 bean B，有两种方法：
+
+1. 让 bean A 通过实现 ApplicationContextAware 接口来感知 applicationContext，从而能在运行时通过 applicationContext.getBean(String beanName) 的方法来获取最新的 bean B。但这时就与 Spring 代码耦合，违背了控制反转原则，即 bean 完全由 Spring 容器管理，我们只用使用 bean 就可以了
+
+2. 通过 <lookup-method /> 标签实现
+
+看以下一个场景，NewsProvider 是一个单例类，News 是非单例类，NewsProvider 每次提供最新的 news，现在分别通过以上两种方法来实现该需求。
+
+**通过实现 ApplicationContextAware 接口：**
+
+    public class NewsProvider implements ApplicationContextAware {
+
+    	private News news;
+
+    	private ApplicationContext applicationContext;
+    
+    	public News getNews() {
+    		return applicationContext.getBean("news", News.class);
+    	}
+    
+    	public void setNews(News news) {
+    		this.news = news;
+    	}
+    
+    	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    		this.applicationContext = applicationContext;
+    	}
+    }
+
+让NewsProvider类实现ApplicationContextAware接口（实现 BeanFactoryAware 接口也可以），每次调用 NewsProvider 的 getNews 方法时，都会从 ApplicationContext 中获取一个新的 News 实例。
+
+对应的配置文件为：
+
+    <bean id="news" class="com.test.News" scope="prototype"/>
+    <bean id="newsProvider" class="com.test.NewsProvider">
+    	<property name="news" ref="news"/>
+    </bean>
+
+**通过 <lookup-method /> 标签实现：**
+
+    class LookupProvider {
+    	private News news;
+    
+    	public News getNews() {
+    		return news;
+    	}
+    
+    	public void setNews(News news) {
+    		this.news = news;
+    	}
+    }
+
+此时无需实现任何接口，只用在配置文件中进行如下设置即可：
+
+    <bean id="lookupProvider" class="com.test.LookupProvider">
+    	<lookup-method name="getNews" bean="news"/>
+    </bean>
+
+显然我们没有用到 Spring 的任何类和接口 ，实现了与 Spring 代码的耦合。
+
+其中最为核心的部分就是 lookup-method 的配置，Spring 应用了 CGLIB 动态代理类库，在初始化容器时对 <lookup-method /> 中的 bean 做了特殊处理，Spring 会对 bean 指定的 class 做动态代理， 通过 name 中指定的方法，返回 bean 的实例对象。
+
+### replaced-method
+
+主要作用是替换方法体及其返回值。需要改变的方法，实现 MethodReplacer 接口并重写 reimplement 方法来动态地改变方法。内部实现为 CGLIB 方法，重新生成子类，重写配置方法和返回对象，达到动态改变的效果。
+
+直接看例子，bean 配置文件：
+
+    <bean id="admin" class="com.test.Admin">
+    	<property name="name" value="hzc"/>
+    	<property name="age" value="23"/>
+    	<replaced-method name="introduce" replacer="replacedAdmin"/>
+    </bean>
+    
+    <bean id="replacedAdmin" class="com.test.ReplacedAdmin"/>
+
+Admin 代码：
+
+    class Admin {
+    
+    	private String name;
+    	private int age;
+    	public Admin() {
+    
+    	}
+    	public Admin(String id) {
+    		this.id = id;
+    	}
+    
+    	public String getName() {
+    		return name;
+    	}
+    
+    	public void setName(String name) {
+    		this.name = name;
+    	}
+    
+    	public int getAge() {
+    		return age;
+    	}
+    
+    	public void setAge(int age) {
+    		this.age = age;
+    	}
+    
+    	public void introduce() {
+    		System.out.println("hello, my name is " + name +
+    		", and I'am " + age + " years old");
+    	}
+    }
+
+ReplacedAdmin 代码：
+
+    class ReplacedAdmin implements MethodReplacer {
+    
+    	public Object reimplement(Object o, Method method, Object[] objects) throws Throwable {
+    		System.out.println("已经被替换!");
+    		return null;
+    	}
+    }
+
+测试代码：
+
+    public void test() throws Exception {
+    	String location = "bean.xml";
+    	ApplicationContext applicationContext = new ClassPathXmlApplicationContext(location);
+    	Admin admin = (Admin) applicationContext.getBean("admin");
+    	admin.introduce(); // 结果为 “已经被替换”，成功地替换了原来 introduce() 的内容
+    }
 
 ### BeanPostProcessor
 
