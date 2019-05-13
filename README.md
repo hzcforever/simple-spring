@@ -23,7 +23,15 @@ A simple IOC container refer to Spring.
 * [version 2.0](#version-20)
 	* [simple-spring 2.0 的功能](#simple-spring-20-的功能)
 	* [IOC 的实现](#IOC-的实现)
-	* [AOP 的实现](#AOP-的实现) 
+		* [BeanFactory 的流程](#BeanFactory-的流程)
+		* [BeanDefinition 的介绍](#BeanDefinition-的介绍)
+		* [xml 的解析](#xml-的解析)
+		* [BeanPostProcessor 的注册](#BeanPostProcessor-的注册)
+		* [getBean 的解析流程](#getBean-的解析流程)
+	* [AOP 的实现](#AOP-的实现)
+		* [AOP 原理](#AOP-原理) 
+		* [基于 JDK 的动态代理](#基于-JDK-的动态代理)
+		* [基于 CGLIB 的动态代理](#基于-CGLIB-的动态代理)
 	* [IOC 与 AOP 的协作](#IOC-与-AOP-的协作)
 	* [总结](#总结)
 
@@ -592,7 +600,7 @@ AOP 是基于代理模式的，在介绍 AOP 的具体实现之前，先引入 S
 
 ### IOC 的实现
 
-**BeanFactory 的流程**
+#### BeanFactory 的流程
 
 1. BeanFactory 加载 Bean 的配置文件，将读到的配置属性信息封装成 BeanDefinition 对象
 2. 将封装好的 BeanDefinition 对象注册到 BeanDefinition 容器中
@@ -603,7 +611,7 @@ AOP 是基于代理模式的，在介绍 AOP 的具体实现之前，先引入 S
 
 上面就是 BeanFactory 的生命流程，即 IOC 容器的生命流程。
 
-**BeanDefinition 的介绍**
+#### BeanDefinition 的介绍
 
 在详细介绍 IOC 容器的工作原理前，这里先介绍实现 IOC 所用到的一些辅助类，包括 BeanDefinition、BeanReference、PropertyValues 和 PropertyValue。这些类与接下来 xml 配置文件的解析紧密相关。按照顺序，先从 BeanDefinition 开始介绍。
 
@@ -629,7 +637,7 @@ BeanDefinition 从字面意思上翻译成中文就是“ Bean 的定义”。�
     	}
     }
 
-**xml 的解析**
+#### xml 的解析
 
 BeanFactory 初始化时，会根据传入的 xml 配置文件路径加载并解析配置文件。但是加载和解析 xml 配置文件这种脏活累活，BeanFactory 可不太愿意干，它只想管理容器中的 bean。于是 BeanFactory 将加载和解析配置文件的任务委托给专职人员 BeanDefinitionReader 的实现类 XmlBeanDefinitionReader 去做。那么 XmlBeanDefinitionReader 具体是怎么做的呢？XmlBeanDefinitionReader 做了如下几件事情：
 
@@ -643,7 +651,7 @@ BeanFactory 初始化时，会根据传入的 xml 配置文件路径加载并解
 
 上面的解析步骤并不复杂，实现起来也不难，在之前 simple-spring 1.0 的版本中我就已经实现了。
 
-**BeanPostProcessor 的注册**
+#### BeanPostProcessor 的注册
 
 BeanPostProcessor 接口是 Spring 对外拓展的接口之一，其主要用途提供一个机会，让开发人员能够插手 bean 的实例化过程。通过实现这个接口，我们就可在 bean 实例化时，对bean 进行一些处理。比如，我们所熟悉的 AOP 就是在这里将切面逻辑织入相关 bean 中的。正是因为有了 BeanPostProcessor 接口作为桥梁，才使得 AOP 可以和 IOC 容器产生联系。
 
@@ -656,7 +664,7 @@ XmlBeanDefinitionReader 在完成解析工作后，BeanFactory 会将它解析�
 3. 将实例化好的对象放入 List<BeanPostProcessor> 中
 4. 重复2、3步，直至所有的实现类完成注册
 
-**getBean 的解析流程**
+#### getBean 的解析流程
 
 在完成了 xml 的解析、BeanDefinition 的注册以及 BeanPostProcessor 的注册过程后。BeanFactory 初始化的工作算是结束了，此时 BeanFactory 处于就绪状态，等待外部程序的调用。
 
@@ -675,9 +683,21 @@ XmlBeanDefinitionReader 在完成解析工作后，BeanFactory 会将它解析�
 
 ### AOP 的实现
 
-**AOP 原理**
+#### AOP 原理
 
-**基于 JDK 动态代理的 AOP 实现**
+AOP 是基于动态代理模式实现的，具体实现上可以基于 JDK 动态代理或者 Cglib 动态代理。其中 JDK 动态代理只能代理实现了接口的对象，而 Cglib 动态代理则无此限制。所以在为没有实现接口的对象生成代理时，只能使用 Cglib。在 simple-spring 中，暂时只实现了基于 JDK 动态代理的代理对象生成器。
+
+关于 AOP 原理这里就不多说了，下面说说 simple-spring 中 AOP 的实现步骤：
+
+1. AOP 逻辑介入 BeanFactory 实例化 bean 的过程
+2. 根据 Pointcut 定义的匹配规则，判断当前正在实例化的 bean 是否符合规则
+3. 如果符合，代理生成器将切面逻辑 Advice 织入 bean 相关方法中，并为目标 bean 生成代理对象
+4. 将生成的 bean 的代理对象返回给 BeanFactory 容器，到此，AOP 逻辑执行结束
+5. 对于上面的4步流程，熟悉 Spring AOP 的朋友应该能很容易理解。
+
+#### 基于 JDK 的动态代理
+
+#### 基于 CGLIB 的动态代理
 
 ### IOC 与 AOP 的协作
 
