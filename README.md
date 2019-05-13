@@ -699,6 +699,15 @@ AOP 是基于动态代理模式实现的，具体实现上可以基于 JDK 动�
 
 #### 基于 CGLIB 的动态代理
 
+
+**两种代理方式总结：**
+
+1. JDK 代理不需要第三方库的支持，只需要 JDK 环境即可进行代理，即实现 InvocationHandler，使用 Proxy.newProxyInstance 产生代理对象，并且被代理的对象必须实现接口
+2. CGLIB 必须依赖 CGLIB 的类库，将代理对象类的 class 文件加载进来，通过修改其字节码生成子类来处理
+3. 如果目标对象实现了接口，默认情况下会采用 JDK 的动态代理实现 AOP，也可强制使用 CGLIB；如果目标对象没有实现接口，必须使用 CGLIB 库
+4. 可以通过添加CGLIB库(aspectjrt-xxx.jar、aspectjweaver-xxx.jar、cglib-nodep-xxx.jar)或在 Spring 配置文件中加入 `<aop:aspectj-autoproxy proxy-target-class="true"/>` 强制使用 CGLIB 实现 AOP
+5. JDK 动态代理只能对实现了接口的类生成代理，而不能针对类；CGLIB 是针对类实现代理，主要是对指定的类生成一个子类，覆盖其中的方法，并覆盖其中方法实现增强，但是因为采用的是继承，所以该类或方法最好不要声明成 final，对于 final 类或方法，是无法继承的
+
 ### IOC 与 AOP 的协作
 
 ### 总结
