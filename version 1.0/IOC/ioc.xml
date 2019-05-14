@@ -1,0 +1,16 @@
+<beans>
+
+    <bean id="wheel" class="com.hzc.IOC_AOP.IOC.Wheel">
+        <property name="brand" value="Michelin"></property>
+        <property name="specification" value="265/60 R18"></property>
+    </bean>
+
+    <bean id="car" class="com.hzc.IOC_AOP.IOC.Car">
+        <property name="name" value="Mercedes Benz G 500"></property>
+        <property name="length" value="4717mm"></property>
+        <property name="width" value="1855mm"></property>
+        <property name="height" value="1949mm"></property>
+        <property name="wheel" ref="wheel"></property>
+    </bean>
+
+</beans>
