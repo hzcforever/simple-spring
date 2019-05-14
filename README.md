@@ -708,51 +708,51 @@ Talk is cheap,show me the code.
 目标类定义：
 
     public interface UserService {
-    	void save(Admin admin);
-    	void update(Admin admin);
+        void save(Admin admin);
+        void update(Admin admin);
     }
 
     public class UserServiceImpl implements UserService {
-    	public void save(Admin admin) {
-    		System.out.println("save user info");
-    	}
+        public void save(Admin admin) {
+            System.out.println("save user info");
+        }
     
     	public void update(Admin admin) {
-    		System.out.println("update user info");
+    	    System.out.println("update user info");
     	}
     }
 
 代理创建者定义：
 
     public interface ProxyCreator {
-    	Object getProxy();
+        Object getProxy();
     }
 
     public class JdkProxyCreator implements ProxyCreator, InvocationHandler {
     
-    	private Object target;
+        private Object target;
     
-    	public JdkProxyCreator(Object target) {
-    		assert target != null;
-    		Class<?>[] interfaces = target.getClass().getInterfaces();
-    		if (interfaces.length == 0) {
-    			throw new IllegalArgumentException("target doesn't implement any interface");
+        public JdkProxyCreator(Object target) {
+    	    assert target != null;
+    	    Class<?>[] interfaces = target.getClass().getInterfaces();
+    	    if (interfaces.length == 0) {
+    		    throw new IllegalArgumentException("target doesn't implement any interface");
     		}
-    		this.target = target;
+    	    this.target = target;
     	}
     
     	public Object getProxy() {
-    		Class<?> clazz = target.getClass();
-    		// 生成代理对象
-    		return Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), this);
+    	    Class<?> clazz = target.getClass();
+    	    // 生成代理对象
+    	    return Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), this);
     	}
     
     	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    		System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method start");
-    		// 调用目标方法
-    		Object retVal = method.invoke(target, args);
-    		System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method over");
-    		return retVal;
+    	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method start");
+    	    // 调用目标方法
+    	    Object retVal = method.invoke(target, args);
+    	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method over");
+    	    return retVal;
     	}
     }
 
@@ -764,12 +764,12 @@ invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，�
     
     	@Test
     	public void getProxy() {
-    		ProxyCreator proxyCreator = new JdkProxyCreator(new UserServiceImpl());
-    		UserService userService = (UserService) proxyCreator.getProxy();
+    	    ProxyCreator proxyCreator = new JdkProxyCreator(new UserServiceImpl());
+    	    UserService userService = (UserService) proxyCreator.getProxy();
     
-    		System.out.println("proxy type = " + userService.getClass());
-    		userService.save(null);
-    		userService.update(null);
+    	    System.out.println("proxy type = " + userService.getClass());
+    	    userService.save(null);
+    	    userService.update(null);
     	}
     }
 
@@ -792,11 +792,11 @@ invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，�
 目标类：
 
     public class Tank59 {
-    	public void run() {
-    		System.out.println("极速前行中");
+        public void run() {
+    	    System.out.println("极速前行中");
     	}
     	public void shoot() {
-    		System.out.println("轰轰轰...");
+    	    System.out.println("轰轰轰...");
     	}
     }
 
@@ -809,19 +809,19 @@ CGLIB 代理创建类：
     	private MethodInterceptor  methodInterceptor;
     
     	public CglibProxyCreator(Object target, MethodInterceptor methodInterceptor) {
-    		assert (target != null && methodInterceptor != null);
-    		this.target = target;
-    		this.methodInterceptor = methodInterceptor;
+    	    assert (target != null && methodInterceptor != null);
+    	    this.target = target;
+    	    this.methodInterceptor = methodInterceptor;
     	}
     
     	public Object getProxy() {
-    		Enhancer enhancer = new Enhancer();
-    		// 设置代理类的父类
-    		enhancer.setSuperclass(target.getClass());
-    		// 设置代理逻辑
-    		enhancer.setCallback(methodInterceptor);
-    		// 创建代理对象
-    		return enhancer.create();
+    	    Enhancer enhancer = new Enhancer();
+    	    // 设置代理类的父类
+    	    enhancer.setSuperclass(target.getClass());
+    	    // 设置代理逻辑
+    	    enhancer.setCallback(methodInterceptor);
+    	    // 创建代理对象
+    	    return enhancer.create();
     	}
     }
 
@@ -830,15 +830,15 @@ CGLIB 代理创建类：
     public class TankRemanufacture implements MethodInterceptor {
     
     	public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
-    		if (method.getName().equals("run")) {
-    			System.out.println("正在重造59 tank");
-    			System.out.println("重造成功");
-    			System.out.println("已起飞");
-    			methodProxy.invokeSuper(o, objects);
-    			System.out.println("已击落敌机，正在返航");
-    			return null;
+    	    if (method.getName().equals("run")) {
+    	        System.out.println("正在重造59 tank");
+    	        System.out.println("重造成功");
+    	        System.out.println("已起飞");
+    	        methodProxy.invokeSuper(o, objects);
+    	        System.out.println("已击落敌机，正在返航");
+    	        return null;
     		}
-    		return methodProxy.invokeSuper(o, objects);
+    	    return methodProxy.invokeSuper(o, objects);
     	}
     }
 
@@ -848,13 +848,13 @@ CGLIB 代理创建类：
     
     	@Test
     	public void getProxy() {
-    		ProxyCreator proxyCreator = new CglibProxyCreator(new Tank59(), new TankRemanufacture());
-    		Tank59 tank59 = (Tank59) proxyCreator.getProxy();
+    	    ProxyCreator proxyCreator = new CglibProxyCreator(new Tank59(), new TankRemanufacture());
+    	    Tank59 tank59 = (Tank59) proxyCreator.getProxy();
     
-    		System.out.println("proxy class = " + tank59.getClass());
-    		tank59.run();
-    		System.out.println("射击测试:");
-    		tank59.shoot();
+    	    System.out.println("proxy class = " + tank59.getClass());
+    	    tank59.run();
+    	    System.out.println("射击测试:");
+    	    tank59.shoot();
     	}
     }
 
