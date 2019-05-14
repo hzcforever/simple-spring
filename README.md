@@ -105,24 +105,24 @@ A simple IOC container refer to Spring.
 我们可以把不同环境的配置分别配置到单独的文件中，举个例子：
 
     <beans profile="development"
-    	xmlns="http://www.springframework.org/schema/beans"
-    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
-    	xsi:schemaLocation="...">
+        xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+        xsi:schemaLocation="...">
     
-    	<jdbc:embedded-database id="dataSource">
-    		<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
-    		<jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
-    	</jdbc:embedded-database>
+        <jdbc:embedded-database id="dataSource">
+    	    <jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+    	    <jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
+        </jdbc:embedded-database>
     </beans>
 
     <beans profile="production"
-    	xmlns="http://www.springframework.org/schema/beans"
-    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    	xmlns:jee="http://www.springframework.org/schema/jee"
-    	xsi:schemaLocation="...">
+        xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:jee="http://www.springframework.org/schema/jee"
+        xsi:schemaLocation="...">
     
-    	<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+        <jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
     </beans>
 
 应该不必做过多解释了吧，看每个文件第一行的 profile=""。
@@ -130,21 +130,21 @@ A simple IOC container refer to Spring.
 当然，我们也可以在一个配置文件中使用：
 
     <beans xmlns="http://www.springframework.org/schema/beans"
-    	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
-    	xmlns:jee="http://www.springframework.org/schema/jee"
-    	xsi:schemaLocation="...">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+        xmlns:jee="http://www.springframework.org/schema/jee"
+        xsi:schemaLocation="...">
     
-    	<beans profile="development">
-    		<jdbc:embedded-database id="dataSource">
-    			<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
-    			<jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
-    		</jdbc:embedded-database>
-    	</beans>
+        <beans profile="development">
+    	    <jdbc:embedded-database id="dataSource">
+    		    <jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+    		    <jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
+    	    </jdbc:embedded-database>
+        </beans>
     
-    	<beans profile="production">
-    		<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
-    	</beans>
+        <beans profile="production">
+    	    <jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+        </beans>
 
     </beans>
 
@@ -182,13 +182,13 @@ profile 可以激活多个
     <bean id="clientService" class="examples.ClientService" factory-method="createInstance"/>
 
     public class ClientService {
-    	private static ClientService clientService = new ClientService();
-    	private ClientService() {}
+        private static ClientService clientService = new ClientService();
+        private ClientService() {}
     
-    	// 静态方法
-    	public static ClientService createInstance() {
-    		return clientService;
-    	}
+        // 静态方法
+        public static ClientService createInstance() {
+    	    return clientService;
+        }
     }
 
 实例工厂：
@@ -202,17 +202,17 @@ profile 可以激活多个
     <bean id="accountService" factory-bean="serviceLocator" factory-method="createAccountServiceInstance"/>
     
     public class DefaultServiceLocator {
-    	private static ClientService clientService = new ClientServiceImpl();
+        private static ClientService clientService = new ClientServiceImpl();
     
-    	private static AccountService accountService = new AccountServiceImpl();
+        private static AccountService accountService = new AccountServiceImpl();
     
-    	public ClientService createClientServiceInstance() {
-    		return clientService;
-    	}
+        public ClientService createClientServiceInstance() {
+    	    return clientService;
+        }
     
-    	public AccountService createAccountServiceInstance() {
-    		return accountService;
-    	}
+        public AccountService createAccountServiceInstance() {
+    	    return accountService;
+        }
     }
     
 ### FactoryBean
@@ -231,31 +231,31 @@ FactoryBean 以 Bean 结尾，表示它是一类 Bean，不同于普通 Bean 的
 
     public class FactoryBeanTest implements FactoryBean {
     
-    	private String type;
+        private String type;
     
-    	public String getType() {
+        public String getType() {
             return type;
-    	}
+        }
     
-    	public void setType(String type) {
+        public void setType(String type) {
             this.type = type;
-    	}
+        }
     
-    	public Object getObject() throws Exception {
+        public Object getObject() throws Exception {
     	    if ("student".equals(type)) {
                 return new Student();
     	    } else {
                 return new School();
     	    }
-    	}
+        }
     
-    	public Class<?> getObjectType() {
+        public Class<?> getObjectType() {
             return School.class;
-    	}
+        }
     
-    	public boolean isSingleton() {
+        public boolean isSingleton() {
             return true;
-    	}
+        }
     }
 
 通过测试可以验证之前的想法。
@@ -294,14 +294,14 @@ BeanWrapper 接口，作为 spring 内部的一个核心接口，正如其名，
 
     public class AnotherExampleBean implements InitializingBean {
     
-    	public void afterPropertiesSet() {
-    	// do some initialization work
-    	}
+        public void afterPropertiesSet() {
+        // do some initialization work
+        }
     }
 
     @Bean(initMethod = "init")
     public Foo foo() {
-    	return new Foo();
+        return new Foo();
     }
 
     @PostConstruct
@@ -315,14 +315,14 @@ BeanWrapper 接口，作为 spring 内部的一个核心接口，正如其名，
 
     public class AnotherExampleBean implements DisposableBean {
     
-    	public void destroy() {
-    	// do some destruction work (like releasing pooled connections)
-    	}
+        public void destroy() {
+        // do some destruction work (like releasing pooled connections)
+        }
     }
 
     @Bean(destroyMethod = "cleanup")
     public Bar bar() {
-    	return new Bar();
+        return new Bar();
     }
 
     @PreDestroy
@@ -343,12 +343,12 @@ Spring 中提供了继承自 AbstractBeanDefinition 的 ChildBeanDefinition 来�
 看如下一个例子:
 
     <bean id="inheritedTestBean" abstract="true" class="org.springframework.beans.TestBean">
-    	<property name="name" value="parent"/>
-    	<property name="age" value="1"/>
+        <property name="name" value="parent"/>
+        <property name="age" value="1"/>
     </bean>
     
     <bean id="inheritsWithDifferentClass" class="org.springframework.beans.DerivedTestBean" parent="inheritedTestBean" init-method="initialize">
-    	<property name="name" value="override"/>
+        <property name="name" value="override"/>
     </bean>
 
 parent bean 设置了 abstract="true" 所以它不会被实例化，child bean 继承了 parent bean 的两个属性，但是对 name 属性进行了覆写。
@@ -360,8 +360,8 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 比如下面这个极端 parent bean，它没有指定 class，所以毫无疑问，这个 bean 的作用就是用来充当模板用的 parent bean，此处就必须加上 abstract = true。
 
     <bean id="inheritedTestBeanWithoutClass" abstract="true">
-    	<property name="name" value="parent"/>
-    	<property name="age" value="1"/>
+        <property name="name" value="parent"/>
+        <property name="age" value="1"/>
     </bean>
 
 ### lookup-method
@@ -378,21 +378,21 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 
     public class NewsProvider implements ApplicationContextAware {
 
-    	private News news;
+        private News news;
 
-    	private ApplicationContext applicationContext;
+        private ApplicationContext applicationContext;
     
-    	public News getNews() {
-    		return applicationContext.getBean("news", News.class);
-    	}
+        public News getNews() {
+    	    return applicationContext.getBean("news", News.class);
+        }
     
-    	public void setNews(News news) {
-    		this.news = news;
-    	}
+        public void setNews(News news) {
+    	    this.news = news;
+        }
     
-    	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    		this.applicationContext = applicationContext;
-    	}
+        public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    	    this.applicationContext = applicationContext;
+        }
     }
 
 让NewsProvider类实现ApplicationContextAware接口（实现 BeanFactoryAware 接口也可以），每次调用 NewsProvider 的 getNews 方法时，都会从 ApplicationContext 中获取一个新的 News 实例。
@@ -401,27 +401,27 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 
     <bean id="news" class="com.test.News" scope="prototype"/>
     <bean id="newsProvider" class="com.test.NewsProvider">
-    	<property name="news" ref="news"/>
+        <property name="news" ref="news"/>
     </bean>
 
 **通过 `<lookup-method />` 标签实现：**
 
     class LookupProvider {
-    	private News news;
+        private News news;
     
-    	public News getNews() {
-    		return news;
-    	}
+        public News getNews() {
+    	    return news;
+        }
     
-    	public void setNews(News news) {
-    		this.news = news;
-    	}
+        public void setNews(News news) {
+    	    this.news = news;
+        }
     }
 
 此时无需实现任何接口，只用在配置文件中进行如下设置即可：
 
     <bean id="lookupProvider" class="com.test.LookupProvider">
-    	<lookup-method name="getNews" bean="news"/>
+        <lookup-method name="getNews" bean="news"/>
     </bean>
 
 显然我们没有用到 Spring 的任何类和接口 ，实现了与 Spring 代码的耦合。
@@ -435,9 +435,9 @@ child bean 会继承 scope、构造器参数值、属性值、init-method、dest
 直接看例子，bean 配置文件：
 
     <bean id="admin" class="com.test.Admin">
-    	<property name="name" value="hzc"/>
-    	<property name="age" value="23"/>
-    	<replaced-method name="introduce" replacer="replacedAdmin"/>
+        <property name="name" value="hzc"/>
+        <property name="age" value="23"/>
+        <replaced-method name="introduce" replacer="replacedAdmin"/>
     </bean>
     
     <bean id="replacedAdmin" class="com.test.ReplacedAdmin"/>
@@ -446,54 +446,55 @@ Admin 代码：
 
     class Admin {
     
-    	private String name;
-    	private int age;
-    	public Admin() {
+        private String name;
+        private int age;
+        public Admin() {
     
-    	}
-    	public Admin(String id) {
-    		this.id = id;
-    	}
+        }
+
+        public Admin(String id) {
+    	    this.id = id;
+        }
     
-    	public String getName() {
-    		return name;
-    	}
+        public String getName() {
+    	    return name;
+        }
     
-    	public void setName(String name) {
-    		this.name = name;
-    	}
+        public void setName(String name) {
+    	    this.name = name;
+        }
     
-    	public int getAge() {
-    		return age;
-    	}
+        public int getAge() {
+    	    return age;
+        }
     
-    	public void setAge(int age) {
-    		this.age = age;
-    	}
+        public void setAge(int age) {
+    	    this.age = age;
+        }
     
-    	public void introduce() {
-    		System.out.println("hello, my name is " + name +
+        public void introduce() {
+    	    System.out.println("hello, my name is " + name +
     		", and I'am " + age + " years old");
-    	}
+        }
     }
 
 ReplacedAdmin 代码：
 
     class ReplacedAdmin implements MethodReplacer {
     
-    	public Object reimplement(Object o, Method method, Object[] objects) throws Throwable {
-    		System.out.println("已经被替换!");
-    		return null;
-    	}
+        public Object reimplement(Object o, Method method, Object[] objects) throws Throwable {
+    	    System.out.println("已经被替换!");
+    	    return null;
+        }
     }
 
 测试代码：
 
     public void test() throws Exception {
-    	String location = "bean.xml";
-    	ApplicationContext applicationContext = new ClassPathXmlApplicationContext(location);
-    	Admin admin = (Admin) applicationContext.getBean("admin");
-    	admin.introduce(); // 结果为 “已经被替换”，成功地替换了原来 introduce() 的内容
+        String location = "bean.xml";
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext(location);
+        Admin admin = (Admin) applicationContext.getBean("admin");
+        admin.introduce(); // 结果为 “已经被替换”，成功地替换了原来 introduce() 的内容
     }
 
 ### init-method
@@ -518,9 +519,9 @@ InitializingBean 和 init-method 可以一起使用，Spring 会先处理 Initia
 
     public interface BeanPostProcessor {
     
-    	Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
+        Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
     
-       	Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
+        Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
     }
 
 看这个接口中的两个方法名字我们大体上可以猜测 bean 在初始化之前会执行 postProcessBeforeInitialization 这个方法，初始化完成之后会执行 postProcessAfterInitialization 这个方法。但是，这么理解是非常片面的。
@@ -717,9 +718,9 @@ Talk is cheap,show me the code.
             System.out.println("save user info");
         }
     
-    	public void update(Admin admin) {
-    	    System.out.println("update user info");
-    	}
+        public void update(Admin admin) {
+            System.out.println("update user info");
+        }
     }
 
 代理创建者定义：
@@ -739,21 +740,21 @@ Talk is cheap,show me the code.
     		    throw new IllegalArgumentException("target doesn't implement any interface");
     		}
     	    this.target = target;
-    	}
+        }
     
-    	public Object getProxy() {
+        public Object getProxy() {
     	    Class<?> clazz = target.getClass();
     	    // 生成代理对象
     	    return Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), this);
-    	}
+        }
     
-    	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method start");
     	    // 调用目标方法
     	    Object retVal = method.invoke(target, args);
     	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method over");
     	    return retVal;
-    	}
+        }
     }
 
 invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，和结束时间。
@@ -762,15 +763,15 @@ invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，�
 
     public class JdkProxyCreatorTest {
     
-    	@Test
-    	public void getProxy() {
+        @Test
+        public void getProxy() {
     	    ProxyCreator proxyCreator = new JdkProxyCreator(new UserServiceImpl());
     	    UserService userService = (UserService) proxyCreator.getProxy();
     
     	    System.out.println("proxy type = " + userService.getClass());
     	    userService.save(null);
     	    userService.update(null);
-    	}
+        }
     }
 
 结果为：
@@ -794,27 +795,27 @@ invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，�
     public class Tank59 {
         public void run() {
     	    System.out.println("极速前行中");
-    	}
-    	public void shoot() {
+        }
+        public void shoot() {
     	    System.out.println("轰轰轰...");
-    	}
+        }
     }
 
 CGLIB 代理创建类：
 
     public class CglibProxyCreator implements ProxyCreator {
     
-    	private Object target;
+        private Object target;
     
-    	private MethodInterceptor  methodInterceptor;
+        private MethodInterceptor  methodInterceptor;
     
-    	public CglibProxyCreator(Object target, MethodInterceptor methodInterceptor) {
+        public CglibProxyCreator(Object target, MethodInterceptor methodInterceptor) {
     	    assert (target != null && methodInterceptor != null);
     	    this.target = target;
     	    this.methodInterceptor = methodInterceptor;
-    	}
+        }
     
-    	public Object getProxy() {
+        public Object getProxy() {
     	    Enhancer enhancer = new Enhancer();
     	    // 设置代理类的父类
     	    enhancer.setSuperclass(target.getClass());
@@ -822,14 +823,14 @@ CGLIB 代理创建类：
     	    enhancer.setCallback(methodInterceptor);
     	    // 创建代理对象
     	    return enhancer.create();
-    	}
+        }
     }
 
 方法拦截器：
 
     public class TankRemanufacture implements MethodInterceptor {
     
-    	public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
     	    if (method.getName().equals("run")) {
     	        System.out.println("正在重造59 tank");
     	        System.out.println("重造成功");
@@ -837,17 +838,17 @@ CGLIB 代理创建类：
     	        methodProxy.invokeSuper(o, objects);
     	        System.out.println("已击落敌机，正在返航");
     	        return null;
-    		}
+    	    }
     	    return methodProxy.invokeSuper(o, objects);
-    	}
+        }
     }
 
 代码测试：
 
     public class CglibProxyCreatorTest {
     
-    	@Test
-    	public void getProxy() {
+        @Test
+        public void getProxy() {
     	    ProxyCreator proxyCreator = new CglibProxyCreator(new Tank59(), new TankRemanufacture());
     	    Tank59 tank59 = (Tank59) proxyCreator.getProxy();
     
@@ -855,7 +856,7 @@ CGLIB 代理创建类：
     	    tank59.run();
     	    System.out.println("射击测试:");
     	    tank59.shoot();
-    	}
+        }
     }
 
 结果为：
