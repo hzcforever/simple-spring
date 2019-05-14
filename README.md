@@ -697,8 +697,177 @@ AOP 是基于动态代理模式实现的，具体实现上可以基于 JDK 动�
 
 #### 基于 JDK 的动态代理
 
+基于 JDK 的动态代理主要是通过 JDK 提供的代理类 Proxy 为目标对象创建代理。JDK 动态代理只能为实现了接口的目标类生成代理对象。
+
+    public static Object newProxyInstance(ClassLoader loader, Class<?>[] interfaces, InvocationHandler h)
+
+以上是 Proxy 创建代理的方法声明，loader 为类加载器，interfaces 是目标类实现的接口列表，InvocationHandler 是一个接口类型，里面定义了一个 invoke 方法，用于封装代理的逻辑。
+
+Talk is cheap,show me the code.
+
+目标类定义：
+
+    public interface UserService {
+    	void save(Admin admin);
+    	void update(Admin admin);
+    }
+
+    public class UserServiceImpl implements UserService {
+    	public void save(Admin admin) {
+    		System.out.println("save user info");
+    	}
+    
+    	public void update(Admin admin) {
+    		System.out.println("update user info");
+    	}
+    }
+
+代理创建者定义：
+
+    public interface ProxyCreator {
+    	Object getProxy();
+    }
+
+    public class JdkProxyCreator implements ProxyCreator, InvocationHandler {
+    
+    	private Object target;
+    
+    	public JdkProxyCreator(Object target) {
+    		assert target != null;
+    		Class<?>[] interfaces = target.getClass().getInterfaces();
+    		if (interfaces.length == 0) {
+    			throw new IllegalArgumentException("target doesn't implement any interface");
+    		}
+    		this.target = target;
+    	}
+    
+    	public Object getProxy() {
+    		Class<?> clazz = target.getClass();
+    		// 生成代理对象
+    		return Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), this);
+    	}
+    
+    	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    		System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method start");
+    		// 调用目标方法
+    		Object retVal = method.invoke(target, args);
+    		System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method over");
+    		return retVal;
+    	}
+    }
+
+invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，和结束时间。
+
+代码测试：
+
+    public class JdkProxyCreatorTest {
+    
+    	@Test
+    	public void getProxy() {
+    		ProxyCreator proxyCreator = new JdkProxyCreator(new UserServiceImpl());
+    		UserService userService = (UserService) proxyCreator.getProxy();
+    
+    		System.out.println("proxy type = " + userService.getClass());
+    		userService.save(null);
+    		userService.update(null);
+    	}
+    }
+
+结果为：
+
+    proxy type = class com.sun.proxy.$Proxy4
+    1557801002212-save method start
+    save user info
+    1557801002212-save method over
+    1557801002212-update method start
+    update user info
+    1557801002212-update method over
+
+从代码运行结果我们可以看出，代理逻辑正常执行了。另外，注意一下 userService 指向对象的类型，并非是 com.test.Proxy.UserServiceImpl，而是 com.sun.proxy.$Proxy4。
+
 #### 基于 CGLIB 的动态代理
 
+当目标类未实现任何接口时，就无法使用基于 JDK 的动态代理了。那么此类的目标对象生成代理时就应该使用 CGLIB 了。在 CGLIB 中，代理逻辑是封装在 MethodInterceptor 实现类中的，代理对象通过 Enhancer 类的 create 方法进行创建。
+
+目标类：
+
+    public class Tank59 {
+    	public void run() {
+    		System.out.println("极速前行中");
+    	}
+    	public void shoot() {
+    		System.out.println("轰轰轰...");
+    	}
+    }
+
+CGLIB 代理创建类：
+
+    public class CglibProxyCreator implements ProxyCreator {
+    
+    	private Object target;
+    
+    	private MethodInterceptor  methodInterceptor;
+    
+    	public CglibProxyCreator(Object target, MethodInterceptor methodInterceptor) {
+    		assert (target != null && methodInterceptor != null);
+    		this.target = target;
+    		this.methodInterceptor = methodInterceptor;
+    	}
+    
+    	public Object getProxy() {
+    		Enhancer enhancer = new Enhancer();
+    		// 设置代理类的父类
+    		enhancer.setSuperclass(target.getClass());
+    		// 设置代理逻辑
+    		enhancer.setCallback(methodInterceptor);
+    		// 创建代理对象
+    		return enhancer.create();
+    	}
+    }
+
+方法拦截器：
+
+    public class TankRemanufacture implements MethodInterceptor {
+    
+    	public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+    		if (method.getName().equals("run")) {
+    			System.out.println("正在重造59 tank");
+    			System.out.println("重造成功");
+    			System.out.println("已起飞");
+    			methodProxy.invokeSuper(o, objects);
+    			System.out.println("已击落敌机，正在返航");
+    			return null;
+    		}
+    		return methodProxy.invokeSuper(o, objects);
+    	}
+    }
+
+代码测试：
+
+    public class CglibProxyCreatorTest {
+    
+    	@Test
+    	public void getProxy() {
+    		ProxyCreator proxyCreator = new CglibProxyCreator(new Tank59(), new TankRemanufacture());
+    		Tank59 tank59 = (Tank59) proxyCreator.getProxy();
+    
+    		System.out.println("proxy class = " + tank59.getClass());
+    		tank59.run();
+    		System.out.println("射击测试:");
+    		tank59.shoot();
+    	}
+    }
+
+结果为：
+
+    proxy class = class com.test.CGLIB.Tank59$$EnhancerByCGLIB$$1e296a91
+    正在重造59 tank
+    重造成功
+    已起飞
+    极速前行中
+    已击落敌机，正在返航
+    射击测试:
+    轰轰轰...
 
 **两种代理方式总结：**
 
