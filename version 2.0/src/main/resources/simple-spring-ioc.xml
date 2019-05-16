@@ -15,4 +15,15 @@
         <property name="money" value="150000"/>
     </bean>
 
+    <bean id="helloService" class="com.example.MySpringBoot.Model.HelloServiceImpl"/>
+
+    <bean id="logInterceptor" class="com.example.MySpringBoot.Model.LogInterceptor"/>
+
+    <bean id="autoProxyCreator" class="com.example.MySpringBoot.AOP.AspectJAwareAdvisorAutoProxyCreator"/>
+
+    <bean id="helloServiceAspect" class="com.example.MySpringBoot.AOP.AspectJExpressionPointcutAdvisor">
+        <property name="advice" ref="logInterceptor"/>
+        <property name="expression" value="execution(* com.example.MySpringBoot.Model.*.sayHelloWorld(..))"/>
+    </bean>
+
 </beans>
