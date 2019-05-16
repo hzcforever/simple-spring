@@ -880,6 +880,19 @@ CGLIB 代理创建类：
 
 ### IOC 与 AOP 的协作
 
-待更...
+Spring 从 2.0 版本开始集成 AspectJ，通过集成 AspectJ，也使得 Spring AOP 的功能得到了很大的增强。我们在平时开发中，很多时候是使用基于 AspectJ 表达式及其他配置来实现切面功能。所以我在编写 simple-spring 项目时，也在项目中简单集成了 AspectJ。通过集成 AspectJ，使得 simple-spring AOP 可以基于 AspectJ 表达式完成复杂的匹配逻辑。
+
+在 simple-spring 中，AOP 和 IOC 产生联系的具体实现类是 AspectJAwareAdvisorAutoProxyCreator（下面简称 AutoProxyCreator），这个类实现了 BeanPostProcessor 和 BeanFactoryAware 接口。BeanFactory 在注册 BeanPostProcessor 接口相关实现类的阶段，会将其本身注入到 AutoProxyCreator 中，为后面 AOP 给 bean 生成代理对象做准备。BeanFactory 初始化结束后，AOP 与 IOC 桥梁类 AutoProxyCreator 也完成了实例化，并被缓存在 BeanFactory 中，静待 BeanFactory 实例化 bean。当外部产生调用，BeanFactory 开始实例化 bean 时。AutoProxyCreator 就开始悄悄地工作了，细节如下：
+
+1. 从 BeanFactory 查找实现了 PointcutAdvisor 接口的切面对象，切面对象中包含了实现 Pointcut 和 Advice 接口的对象
+2. 使用 Pointcut 中的表达式对象匹配当前的 bean 对象。如果匹配成功，进行下一步；否则终止逻辑，返回 bean
+3. JdkDynamicAopProxy 对象为匹配到的 bean 生成代理对象，并将代理对象返回给 BeanFactory
+
+到此 IOC 与 AOP 的交互已经基本完成。
 
 ### 总结
+
+待更...
+
+
+
