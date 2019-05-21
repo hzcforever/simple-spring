@@ -30,8 +30,8 @@ public class XmlBeanDefinitionReader implements BeanDefinitionReader {
     }
 
     @Override
-    public void loadBeanDefinitions(String locaion) throws FileNotFoundException, Exception {
-        InputStream inputStream = new FileInputStream(locaion);
+    public void loadBeanDefinitions(String location) throws Exception {
+        InputStream inputStream = new FileInputStream(location);
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         Document doc = docBuilder.parse(inputStream);

@@ -4,6 +4,6 @@ import java.io.FileNotFoundException;
 
 public interface BeanDefinitionReader {
 
-    public void loadBeanDefinitions(String locaion) throws FileNotFoundException, Exception;
+    public void loadBeanDefinitions(String location) throws Exception;
 
 }
