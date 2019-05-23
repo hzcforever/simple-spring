@@ -33,7 +33,7 @@ A simple IOC container refer to Spring.
 		* [基于 JDK 的动态代理](#基于-JDK-的动态代理)
 		* [基于 CGLIB 的动态代理](#基于-CGLIB-的动态代理)
 	* [IOC 与 AOP 的协作](#IOC-与-AOP-的协作)
-	* [总结](#总结)
+	* [一点思考](#一点思考)
 
 ## Spring 部分配置特性
 
@@ -931,9 +931,19 @@ Spring 从 2.0 版本开始集成 AspectJ，通过集成 AspectJ，也使得 Spr
 
 到此 IOC 与 AOP 的交互已经基本完成。
 
-### 总结
+### 一点思考
 
-待更...
+**由 Spring 框架中的单例模式想到的：**
+
+为什么对于原型模式的 bean ，Spring 使用懒加载，而对于单例模式的 bean 却在 Spring 初始化就注入了？
+
+Spring 的 依赖注入（包括 lazy-init 方式）都是发生在 AbstractBeanFactory 的 getBean 中。getBean 的 doGetBean 方法调用 getSingleton 对单例的 bean 进行创建。如果是 lazy-init 的方式，则在容器初始化时就被调用，而非 lazy-init 的方式，在用户向容器第一次索要 bean 时调用。
+
+单例的实现方式总共有以下几种：懒汉模式，饿汉线程非安全模式，饿汉线程安全模式，内部类模式，枚举模式。
+
+而在 Spring 依赖注入时，使用了双重判断加锁的单例模式，首先从缓存中获取 bean 实例，如果为 null，对缓存 map 加锁，然后再从缓存中获取 bean，如果继续为 null，就创建一个 bean。这样双重判断，能够避免在加锁的瞬间，有其他依赖注入引发 bean 实例的创建，从而造成重复创建的结果。
+
+那么为什么需要懒加载呢？当我们要访问的数据量过大时，因为内存容量有限，为了减少系统资源的消耗，我们让数据在需要的时候才进行加载，这时就用到懒加载。
 
 
 
