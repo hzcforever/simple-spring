@@ -720,91 +720,112 @@ AOP 是基于动态代理模式实现的，具体实现上可以基于 JDK 动�
 
 基于 JDK 的动态代理主要是通过 JDK 提供的代理类 Proxy 为目标对象创建代理。JDK 动态代理只能为实现了接口的目标类生成代理对象。
 
-    public static Object newProxyInstance(ClassLoader loader, Class<?>[] interfaces, InvocationHandler h)
+    public static Object newProxyInstance(ClassLoader classLoader, Class<?>[] interfaces, InvocationHandler h)
 
-以上是 Proxy 创建代理的方法声明，loader 为类加载器，interfaces 是目标类实现的接口列表，InvocationHandler 是一个接口类型，里面定义了一个 invoke 方法，用于封装代理的逻辑。
+以上是 Proxy 创建代理的方法声明，classLoader 为类加载器，interfaces 是目标类实现的接口列表，InvocationHandler 是一个接口类型，里面定义了一个 invoke 方法，用于封装代理的逻辑。
 
 Talk is cheap,show me the code.
 
 目标类定义：
 
-    public interface UserService {
-        void save(Admin admin);
-        void update(Admin admin);
+    public interface Waiter {
+        void server();
     }
 
-    public class UserServiceImpl implements UserService {
-        public void save(Admin admin) {
-            System.out.println("save user info");
-        }
-    
-        public void update(Admin admin) {
-            System.out.println("update user info");
+    public class ManWaiter implements Waiter {
+        public void server() {
+            System.out.println("man servering...");
         }
     }
 
 代理创建者定义：
 
-    public interface ProxyCreator {
-        Object getProxy();
-    }
+    public class ProxyFactory {
 
-    public class JdkProxyCreator implements ProxyCreator, InvocationHandler {
-    
-        private Object target;
-    
-        public JdkProxyCreator(Object target) {
-    	    assert target != null;
-    	    Class<?>[] interfaces = target.getClass().getInterfaces();
-    	    if (interfaces.length == 0) {
-    		    throw new IllegalArgumentException("target doesn't implement any interface");
-    		}
-    	    this.target = target;
+        private Object targetObject;
+        private BeforeAdvice beforeAdvice;
+        private AfterAdvice afterAdvice;
+
+        public Object getTargetObject() {
+            return targetObject;
         }
-    
-        public Object getProxy() {
-    	    Class<?> clazz = target.getClass();
-    	    // 生成代理对象
-    	    return Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), this);
+
+        public void setTargetObject(Object targetObject) {
+            this.targetObject = targetObject;
         }
-    
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method start");
-    	    // 调用目标方法
-    	    Object retVal = method.invoke(target, args);
-    	    System.out.println(System.currentTimeMillis() + "-" + method.getName() + " method over");
-    	    return retVal;
+
+        public BeforeAdvice getBeforeAdvice() {
+            return beforeAdvice;
+        }
+
+        public void setBeforeAdvice(BeforeAdvice beforeAdvice) {
+            this.beforeAdvice = beforeAdvice;
+        }
+
+        public AfterAdvice getAfterAdvice() {
+            return afterAdvice;
+        }
+
+        public void setAfterAdvice(AfterAdvice afterAdvice) {
+            this.afterAdvice = afterAdvice;
+        }
+
+        public Object createProxy() {
+            ClassLoader classLoader = this.getClass().getClassLoader();
+            // 获取当前类型所实现的所有接口类型
+            Class[] interfaces = targetObject.getClass().getInterfaces();
+
+            InvocationHandler invocationHandler = new InvocationHandler() {
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (beforeAdvice != null) {
+                        beforeAdvice.before();
+                    }
+                    Object result = method.invoke(targetObject, args);
+                    afterAdvice.after();
+                    return result;
+                }
+            };
+            Object proxyObject = Proxy.newProxyInstance(classLoader, interfaces, invocationHandler);
+            return proxyObject;
         }
     }
-
-invoke 方法中的代理逻辑主要用于记录目标方法的调用时间，和结束时间。
 
 代码测试：
 
     public class JdkProxyCreatorTest {
-    
+
         @Test
         public void getProxy() {
-    	    ProxyCreator proxyCreator = new JdkProxyCreator(new UserServiceImpl());
-    	    UserService userService = (UserService) proxyCreator.getProxy();
-    
-    	    System.out.println("proxy type = " + userService.getClass());
-    	    userService.save(null);
-    	    userService.update(null);
+
+            ProxyFactory proxyFactory = new ProxyFactory();
+            proxyFactory.setTargetObject(new ManWaiter()); // 设置目标对象
+            proxyFactory.setBeforeAdvice(new BeforeAdvice() {
+                public void before() {
+                    System.out.println("hi, you're welcome!");
+                }
+            });
+            proxyFactory.setAfterAdvice(new AfterAdvice() {
+                public void after() {
+                    System.out.println("Goodbye!");
+                }
+            });
+            Waiter waiter = (Waiter) proxyFactory.createProxy();
+            waiter.server();
         }
     }
 
 结果为：
 
-    proxy type = class com.sun.proxy.$Proxy4
-    1557801002212-save method start
-    save user info
-    1557801002212-save method over
-    1557801002212-update method start
-    update user info
-    1557801002212-update method over
+    hi, you're welcome!
+    man servering...
+    Goodbye!
 
-从代码运行结果我们可以看出，代理逻辑正常执行了。另外，注意一下 userService 指向对象的类型，并非是 com.test.Proxy.UserServiceImpl，而是 com.sun.proxy.$Proxy4。
+从代码运行结果我们可以看出，代理逻辑正常执行了。总结一下以上动态代理流程：
+
+1. 创建代理工厂
+2. 给工厂设置目标对象、前置增强和后置增强
+3. 调用 createProxy() 得到代理对象
+4. 执行代理对象方法时，先执行前置增强，其次执行目标方法，最后执行后置增强
 
 #### 基于 CGLIB 的动态代理
 
