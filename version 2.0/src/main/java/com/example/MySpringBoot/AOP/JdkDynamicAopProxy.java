@@ -14,8 +14,7 @@ public class JdkDynamicAopProxy extends AbstractAopProxy implements InvocationHa
 
     /**
      * 为目标 bean 生成代理对象
-     *
-     * @return bean 的代理对象
+     * 返回 bean 的代理对象
      */
     @Override
     public Object getProxy() {
@@ -24,12 +23,7 @@ public class JdkDynamicAopProxy extends AbstractAopProxy implements InvocationHa
 
     /**
      * InvocationHandler 接口中的 invoke 方法具体实现，封装了具体的代理逻辑
-     *
-     * @param proxy
-     * @param method
-     * @param args
-     * @return 代理方法或原方法的返回值
-     * @throws Throwable
+     * 代理方法或原方法的返回值
      */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
