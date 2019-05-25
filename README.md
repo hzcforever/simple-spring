@@ -923,22 +923,22 @@ CGLIB 代理创建类：
 
 在 loadBeanDefinitions 的时候，会找到所有实现了 BeanPostProcessor (下面简称为 BPP)的类，并放在一个缓存里，相当于注册了所有的 BeanPpostProcessor 的实现类。在后续通过 getBean 方法获取 bean 的时候，会在 initializeBean 中遍历之前的那个 BPP 缓存，执行对应的 postProcessBeforeInitialization 和 postProcessAfterInitialization 方法。
 
-这里只提一下 postProcessAfterInitialization 方法的执行：
+这里只说明一下 postProcessAfterInitialization 方法的执行：
 
 1. 如果是一些基础类则直接返回 bean
-2. 先从 BeanFactory 查找 AspectJExpressionPointcutAdvisor 类型的对象，得到一个列表
-3. 遍历列表，使用 Pointcut 对象匹配当前 bean 对象，如果匹配成功执行下一步
-4. 生成代理对象，并返回 (最终放入 Spring 容器的是代理对象)
+2. 先从 BeanFactory(从 xml 文件解析后所有的 bean 已经放入 BeanFactory 的缓存中) 查找 AspectJExpressionPointcutAdvisor 类型的对象，得到一个 list
+3. 遍历该 list，使用 Pointcut 对象匹配当前 bean 对象，如果匹配成功执行下一步，否则继续匹配
+4. 若匹配成功创建代理对象和对应的拦截器(Advice)，并返回代理对象(最终放入 Spring 容器的是代理对象)
 
-最后执行拦截器和目标方法，到此 IOC 与 AOP 的协作已经基本完成。
+在 main 函数中调用目标方法时，先执行拦截器中的方法，再执行目标方法，到此 IOC 与 AOP 的协作已经基本完成。
 
 具体来说，在 simple-spring 中，AOP 和 IOC 产生联系的具体实现类是 AspectJAwareAdvisorAutoProxyCreator（下面简称 AutoProxyCreator），这个类实现了 BeanPostProcessor (该类会被存入之前的 BPP 缓存中) 和 BeanFactoryAware 接口。BeanFactory 在注册 BeanPostProcessor 接口相关实现类的阶段，会将其本身注入到 AutoProxyCreator 中，为后面 AOP 给 bean 生成代理对象做准备。
 
-BeanFactory 初始化结束后，AOP 与 IOC 桥梁类 AutoProxyCreator 也完成了实例化，并被缓存在 BeanFactory 中，静待 BeanFactory 实例化 bean。当外部产生调用，BeanFactory 开始实例化 bean 时。AutoProxyCreator 就开始悄悄地工作了，细节如下：
+BeanFactory 初始化结束后，AOP 与 IOC 桥梁类 AutoProxyCreator(BeanPostProcessor 的实现类) 也完成了实例化，并被缓存在 BeanFactory 中，静待 BeanFactory 实例化 bean。当外部产生调用，BeanFactory 开始实例化 bean 时。AutoProxyCreator 就开始悄悄地工作了，细节如下(前面已经说过，现在再看一次)：
 
-1. 从 BeanFactory 查找实现了 PointcutAdvisor 接口的切面对象，切面对象中包含了实现 Pointcut 和 Advice 接口的对象
-2. 使用 Pointcut 中的表达式对象匹配当前的 bean 对象。如果匹配成功，进行下一步；否则终止逻辑，返回 bean
-3. JdkDynamicAopProxy 对象为匹配到的 bean 生成代理对象，并将代理对象返回给 BeanFactory
+1. 从 BeanFactory 查找所有实现了 PointcutAdvisor(这里特指 AspectJExpressionPointcutAdvisor) 接口的切面对象，切面对象中包含了实现 Pointcut 和 Advice 接口的对象
+2. 使用 Pointcut 中的表达式对象匹配当前的 bean 对象。如果匹配成功，进行下一步；否则继续用其它切面对象继续匹配当前 bean，直到逻辑正常结束
+3. JdkDynamicAopProxy 对象为匹配成功的 bean 生成代理对象，并将代理对象返回给 BeanFactory
 
 ### 一点思考
 
