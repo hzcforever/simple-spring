@@ -946,7 +946,7 @@ BeanFactory 初始化结束后，AOP 与 IOC 桥梁类 AutoProxyCreator(BeanPost
 
 为什么对于原型模式的 bean ，Spring 使用懒加载，而对于单例模式的 bean 却在 Spring 初始化就注入了？
 
-Spring 的 依赖注入（包括 lazy-init 方式）都是发生在 AbstractBeanFactory 的 getBean 中。getBean 的 doGetBean 方法调用 getSingleton 对单例的 bean 进行创建。如果是 lazy-init 的方式，则在容器初始化时就被调用，而非 lazy-init 的方式，在用户向容器第一次索要 bean 时调用。
+Spring 的 依赖注入（包括 lazy-init 方式）都是发生在 AbstractBeanFactory 的 getBean 中。getBean 的 doGetBean 方法调用 getSingleton 对单例的 bean 进行创建。如果是非 lazy-init 的方式，则在容器初始化时就被调用，而 lazy-init 的方式，则会在用户向容器第一次索要 bean 时调用。
 
 单例的实现方式总共有以下几种：懒汉模式，饿汉线程非安全模式，饿汉线程安全模式，内部类模式，枚举模式。
 
